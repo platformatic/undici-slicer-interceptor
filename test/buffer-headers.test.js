@@ -12,29 +12,29 @@ describe('make-cacheable-interceptor - buffer headers', () => {
       res.setHeader('Content-Type', Buffer.from('text/plain'))
       res.end('hello world')
     })
-    
+
     server.listen(0)
     await once(server, 'listening')
-    
+
     const serverUrl = `http://localhost:${server.address().port}`
-    
+
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
         { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
       ])
-      
+
       const composedAgent = agent.compose(interceptor)
       setGlobalDispatcher(composedAgent)
-      
+
       // Test that the interceptor handles buffer headers correctly
       const res = await request({
         method: 'GET',
         origin: serverUrl,
         path: '/'
       })
-      
+
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
       assert.strictEqual(res.headers['content-type'], 'text/plain')
       await res.body.dump()
