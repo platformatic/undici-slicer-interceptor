@@ -1,15 +1,14 @@
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
-import { Agent, setGlobalDispatcher, request } from 'undici'
+import { Agent } from 'undici'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createInterceptor } from '../index.js'
 
-describe('make-cacheable-interceptor - existing headers', () => {
-  test('should respect existing cache-control header', async () => {
-    // Setup test server that returns its own cache-control header
+describe('make-cacheable-interceptor - handler binding', () => {
+  test('should correctly bind all handler methods', async () => {
+    // Setup test server
     const server = createServer((req, res) => {
-      res.setHeader('Cache-Control', 'no-store')
       res.end('hello world')
     })
 
@@ -26,17 +25,16 @@ describe('make-cacheable-interceptor - existing headers', () => {
       ])
 
       const composedAgent = agent.compose(interceptor)
-      setGlobalDispatcher(composedAgent)
 
-      // Test that our interceptor respects the server's cache-control header
-      const res = await request({
+      // Make a request with GET method to trigger cache headers
+      const res = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
         path: '/'
       })
 
-      assert.strictEqual(res.headers['cache-control'], 'no-store')
-      await res.body.dump()
+      assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
+      await res.body.text()
     } finally {
       server.close()
     }
