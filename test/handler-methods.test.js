@@ -133,7 +133,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
       assert.strictEqual(methodsCalled.onData, true, 'onData should be called')
       assert.strictEqual(methodsCalled.onComplete, true, 'onComplete should be called')
       assert.strictEqual(methodsCalled.onBodySent, true, 'onBodySent should be called')
-      
+
       // Test for optional connect handler (might not be called in all environments)
       // This is a best-effort test, as it depends on the specific undici implementation
       if (methodsCalled.onConnect) {
@@ -177,7 +177,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Use text() which waits for the complete body
       const text = await res.body.text()
       assert.strictEqual(text, 'hello world')
@@ -224,7 +224,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
       })
 
       assert.strictEqual(res1.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Collect the full response to make sure all events are triggered
       const body = await res1.body.text()
       assert.strictEqual(body, 'hello world')
@@ -264,7 +264,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
 
       // Verify cache header is added
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Reading the body to completion ensures all handler methods get called internally
       const text = await res.body.text()
       assert.strictEqual(text, 'hello world')

@@ -203,14 +203,14 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
 
       // Make a request with explicit GET method
       const res = await composedAgent.request({
-        method: 'GET', 
+        method: 'GET',
         origin: serverUrl,
         path: '/'
       })
 
       // Cache header should be applied for GET method
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Our method handling in the interceptor should handle case when method is undefined
       // This is being tested indirectly, as we can't directly provide an undefined method to undici
     } finally {

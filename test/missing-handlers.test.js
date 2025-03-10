@@ -37,7 +37,7 @@ describe('make-cacheable-interceptor - missing handlers', () => {
 
       // Verify cache header is added
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Reading the body to completion ensures all handler methods get called internally
       const text = await res.body.text()
       assert.strictEqual(text, 'hello world')
@@ -45,7 +45,7 @@ describe('make-cacheable-interceptor - missing handlers', () => {
       server.close()
     }
   })
-  
+
   test('should handle HEAD requests correctly', async () => {
     // Setup test server
     const server = createServer((req, res) => {

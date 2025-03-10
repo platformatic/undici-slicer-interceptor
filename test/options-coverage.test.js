@@ -8,7 +8,7 @@ import { createInterceptor } from '../index.js'
 describe('make-cacheable-interceptor - options coverage', () => {
   test('should provide all router options correctly', async () => {
     // This test is to ensure code coverage for router options
-    
+
     // Setup test server
     const server = createServer((req, res) => {
       res.end('hello world')

@@ -145,7 +145,7 @@ describe('make-cacheable-interceptor - path handling', () => {
       server.close()
     }
   })
-  
+
   test('should support regex-like patterns for route matching', async () => {
     // Setup test server
     const server = createServer((req, res) => {

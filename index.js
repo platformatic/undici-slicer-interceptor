@@ -46,14 +46,14 @@ export function createInterceptor (rules, options = {}) {
   }
 
   // Validate each rule
-  rules.forEach(rule => {
+  for (const rule of rules) {
     if (!rule.routeToMatch || typeof rule.routeToMatch !== 'string') {
       throw new Error('Each rule must have a routeToMatch string')
     }
     if (!rule.cacheControl || typeof rule.cacheControl !== 'string') {
       throw new Error('Each rule must have a cacheControl string')
     }
-  })
+  }
 
   // Sort rules by path length (longest first) to ensure more specific routes are registered first
   const sortedRules = [...rules].sort((a, b) =>
@@ -71,10 +71,10 @@ export function createInterceptor (rules, options = {}) {
   })
 
   // Register all rules with the router
-  sortedRules.forEach(rule => {
+  for (const rule of sortedRules) {
     // Register the route exactly as provided by the user
     router.on('GET', rule.routeToMatch, () => rule.cacheControl)
-  })
+  }
 
   // Return the interceptor function
   return function cachingInterceptor (dispatch) {
