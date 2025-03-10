@@ -7,6 +7,7 @@
 - Lint: `npm run lint`
 - Fix linting issues: `npm run lint:fix`
 - Use the node-runner tool that you have available to run the npm scripts.
+- Code coverage: `npm run coverage`
 
 ## Code Style Guidelines
 - Use JavaScript with JSDoc annotations
