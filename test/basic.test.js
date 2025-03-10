@@ -21,8 +21,8 @@ describe('make-cacheable-interceptor', () => {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/static', cacheControl: 'public, max-age=86400' },
-        { routeToMatch: '/api', cacheControl: 'no-store' }
+        { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' },
+        { routeToMatch: '/api/*', cacheControl: 'no-store' }
       ])
 
       const composedAgent = agent.compose(interceptor)

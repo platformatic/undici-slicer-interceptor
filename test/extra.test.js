@@ -21,10 +21,10 @@ describe('make-cacheable-interceptor - advanced tests', () => {
       // Create agent with our interceptor using more complex patterns
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/static/img', cacheControl: 'public, max-age=604800' }, // 1 week for images
-        { routeToMatch: '/static', cacheControl: 'public, max-age=86400' }, // 1 day for other static
-        { routeToMatch: '/api/v1/cache', cacheControl: 'public, max-age=3600' }, // cacheable API
-        { routeToMatch: '/api', cacheControl: 'no-store' } // most API calls
+        { routeToMatch: '/static/img/*', cacheControl: 'public, max-age=604800' }, // 1 week for images
+        { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' }, // 1 day for other static
+        { routeToMatch: '/api/v1/cache/*', cacheControl: 'public, max-age=3600' }, // cacheable API
+        { routeToMatch: '/api/*', cacheControl: 'no-store' } // most API calls
       ])
 
       const composedAgent = agent.compose(interceptor)
