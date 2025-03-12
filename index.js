@@ -110,33 +110,17 @@ export function createInterceptor (rules, options = {}) {
       // Get the path from options
       const path = options.path || ''
 
-      // Extract the pathname and querystring from the path
-      let pathname = path
-      let queryString = ''
-      const queryIndex = path.indexOf('?')
-      if (queryIndex !== -1) {
-        pathname = path.substring(0, queryIndex)
-        queryString = path.substring(queryIndex + 1)
-      }
-
-      // Find matching route - find-my-way already parses the querystring
-      const result = router.find('GET', pathname, { searchParams: queryString })
+      // Find matching route - pass the entire path to find-my-way
+      // find-my-way will handle the path and querystring parsing
+      const result = router.find('GET', path)
       const matchingRule = result ? result.handler() : null
 
-      // Prepare request context for tag evaluation with properly parsed querystring params
+      // Prepare request context for tag evaluation
       const context = matchingRule
         ? {
-          path: pathname,
+          path: result.path || path,
           params: result.params || {},
-          // Convert searchParams to the expected format for existing code
-          querystring: result && result.searchParams 
-            ? Object.fromEntries(
-                Object.entries(result.searchParams).map(([key, value]) => 
-                  // Handle string values
-                  [key, value]
-                )
-              ) 
-            : {}
+          querystring: result.searchParams || {}
         }
         : null
 
