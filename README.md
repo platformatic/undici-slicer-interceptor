@@ -32,32 +32,32 @@ const interceptor = createInterceptor(
     { 
       routeToMatch: '/static/images/*', 
       cacheControl: 'public, max-age=604800',
-      cacheTags: ["'static'", "'images'"] 
+      cacheTags: "'static', 'images'" 
     }, // 1 week for images
     { 
       routeToMatch: '/static/*', 
       cacheControl: 'public, max-age=86400',
-      cacheTags: ["'static'", "'content'"]
+      cacheTags: "'static', 'content'"
     }, // 1 day for other static content
     { 
       routeToMatch: '/users/:userId', 
       cacheControl: 'private, max-age=3600',
-      cacheTags: ["'user'", "'user-' + .params.userId"] 
+      cacheTags: "'user', 'user-' + .params.userId" 
     }, // 1 hour for user profiles with user-specific tag
     { 
       routeToMatch: '/api/v1/products/:productId', 
       cacheControl: 'public, max-age=1800',
-      cacheTags: ["'api'", "'product'", "'product-' + .params.productId", ".querystring.variant // 'default'"] 
+      cacheTags: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" 
     }, // 30 minutes for product data with tags based on product ID and variant
     { 
       routeToMatch: '/api/v1/cache/*', 
       cacheControl: 'public, max-age=3600',
-      cacheTags: ["'api'", "'v1'", "'cacheable'"]
+      cacheTags: "'api', 'v1', 'cacheable'"
     }, // 1 hour for cacheable API
     { 
       routeToMatch: '/api/*', 
       cacheControl: 'no-store',
-      cacheTags: ["'api'"]
+      cacheTags: "'api'"
     } // No caching for other API endpoints
   ],
   { 
@@ -138,7 +138,7 @@ Cache tags provide a powerful way to implement targeted cache invalidation strat
 
 ### Basic Usage
 
-Cache tags are defined as an array of expressions on each route rule:
+Cache tags are defined as a string expression on each route rule, with multiple values separated by commas:
 
 ```js
 import { createInterceptor } from 'make-cacheable-interceptor'
@@ -147,12 +147,12 @@ const interceptor = createInterceptor([
   {
     routeToMatch: '/users/:userId',
     cacheControl: 'private, max-age=3600',
-    cacheTags: ["'user-' + .params.userId", "'type-user'"]
+    cacheTags: "'user-' + .params.userId, 'type-user'"
   },
   {
     routeToMatch: '/products',
     cacheControl: 'public, max-age=3600',
-    cacheTags: ['.querystring.category', "'products'"]
+    cacheTags: ".querystring.category, 'products'"
   }
 ])
 ```
@@ -174,7 +174,7 @@ Cache tag expressions use the FGH query language, which is similar to jq syntax.
 String literals must be wrapped in single quotes:
 
 ```js
-cacheTags: ["'static-tag'", "'constant-value'"]
+cacheTags: "'static-tag', 'constant-value'"
 ```
 
 ##### Route Parameters
@@ -182,7 +182,7 @@ cacheTags: ["'static-tag'", "'constant-value'"]
 Access route parameters using the `.params` object:
 
 ```js
-cacheTags: ["'user-' + .params.userId"]
+cacheTags: "'user-' + .params.userId"
 ```
 
 For a route like `/users/123`, this would generate a cache tag of `user-123`.
@@ -192,7 +192,7 @@ For a route like `/users/123`, this would generate a cache tag of `user-123`.
 Access query string parameters using the `.querystring` object:
 
 ```js
-cacheTags: ['.querystring.category']
+cacheTags: ".querystring.category"
 ```
 
 For a request to `/products?category=electronics`, this would generate a cache tag of `electronics`.
@@ -202,7 +202,7 @@ For a request to `/products?category=electronics`, this would generate a cache t
 You can concatenate values using the `+` operator:
 
 ```js
-cacheTags: ["'product-' + .params.productId", "'category-' + .querystring.category"]
+cacheTags: "'product-' + .params.productId, 'category-' + .querystring.category"
 ```
 
 ##### Default Values with Null Coalescing
@@ -210,7 +210,7 @@ cacheTags: ["'product-' + .params.productId", "'category-' + .querystring.catego
 Use the `//` operator to provide default values when a parameter is missing:
 
 ```js
-cacheTags: [".querystring.variant // 'default'"]
+cacheTags: ".querystring.variant // 'default'"
 ```
 
 This will use the `variant` query parameter if present, or fall back to `'default'` if not.
@@ -223,7 +223,7 @@ This will use the `variant` query parameter if present, or fall back to `'defaul
 {
   routeToMatch: '/static/*',
   cacheControl: 'public, max-age=86400',
-  cacheTags: ["'static'", "'cdn'"]
+  cacheTags: "'static', 'cdn'"
 }
 ```
 
@@ -235,7 +235,7 @@ This will add `x-cache-tags: static,cdn` to all matching responses.
 {
   routeToMatch: '/users/:userId',
   cacheControl: 'private, max-age=3600',
-  cacheTags: ["'user-' + .params.userId", "'type-user'"]
+  cacheTags: "'user-' + .params.userId, 'type-user'"
 }
 ```
 
@@ -247,7 +247,7 @@ For `/users/123`, this adds `x-cache-tags: user-123,type-user`.
 {
   routeToMatch: '/products',
   cacheControl: 'public, max-age=3600',
-  cacheTags: ['.querystring.category', "'products'"]
+  cacheTags: ".querystring.category, 'products'"
 }
 ```
 
@@ -259,12 +259,7 @@ For `/products?category=electronics`, this adds `x-cache-tags: electronics,produ
 {
   routeToMatch: '/api/:version/categories/:categoryId/products/:productId',
   cacheControl: 'public, max-age=3600',
-  cacheTags: [
-    "'api-version-' + .params.version",
-    "'category-' + .params.categoryId",
-    "'product-' + .params.productId",
-    ".querystring.variant // 'default'"
-  ]
+  cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
 }
 ```
 
@@ -283,7 +278,7 @@ createInterceptor([
   {
     routeToMatch: '/invalid-test',
     cacheControl: 'public, max-age=3600',
-    cacheTags: ['invalid[expression'] // Syntax error
+    cacheTags: 'invalid[expression' // Syntax error
   }
 ])
 ```
