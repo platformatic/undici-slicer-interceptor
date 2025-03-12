@@ -13,7 +13,10 @@ import { compile } from 'fgh'
  * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: Array<string>}>} rules - Array of rules for cache control
  * @param {string} rules[].routeToMatch - Path pattern to match for applying the cache rule
  * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
- * @param {Array<string>} [rules[].cacheTags] - Array of jq-style expressions to generate cache tags
+ * @param {Array<string>} [rules[].cacheTags] - Array of jq-style expressions to generate cache tags from params, querystring, and request headers
+ * @param {string} [rules[].cacheTags[]] - Expression for params using ".params.paramName"
+ * @param {string} [rules[].cacheTags[]] - Expression for query parameters using ".querystring.paramName"
+ * @param {string} [rules[].cacheTags[]] - Expression for request headers using ".headers[\"header-name\"]"
  * @param {Object} [options] - Options for the find-my-way router
  * @param {boolean} [options.ignoreTrailingSlash=false] - Ignore trailing slashes in routes
  * @param {boolean} [options.ignoreDuplicateSlashes=false] - Ignore duplicate slashes in routes
@@ -44,6 +47,11 @@ import { compile } from 'fgh'
  *       routeToMatch: '/api/products',
  *       cacheControl: 'public, max-age=3600',
  *       cacheTags: [".querystring.category"]
+ *     },
+ *     {
+ *       routeToMatch: '/api/auth',
+ *       cacheControl: 'public, max-age=600',
+ *       cacheTags: [".headers[\"x-tenant-id\"]", "'auth'"]
  *     }
  *   ],
  *   { ignoreTrailingSlash: true, caseSensitive: false }
@@ -120,7 +128,17 @@ export function createInterceptor (rules, options = {}) {
         ? {
           path: result.path || path,
           params: result.params || {},
-          querystring: result.searchParams || {}
+          querystring: result.searchParams || {},
+          // Added support for normalized header access
+          // Convert all header keys to lowercase for consistent access
+          headers: (() => {
+            const normalizedHeaders = {};
+            const headers = options.headers || {};
+            for (const key in headers) {
+              normalizedHeaders[key.toLowerCase()] = headers[key];
+            }
+            return normalizedHeaders;
+          })()
         }
         : null
 
