@@ -110,33 +110,35 @@ export function createInterceptor (rules, options = {}) {
       // Get the path from options
       const path = options.path || ''
 
-      // Extract the pathname from the path (which might include querystring)
+      // Extract the pathname and querystring from the path
       let pathname = path
+      let queryString = ''
       const queryIndex = path.indexOf('?')
       if (queryIndex !== -1) {
         pathname = path.substring(0, queryIndex)
+        queryString = path.substring(queryIndex + 1)
       }
 
-      // Find matching route
-      const result = router.find('GET', pathname)
+      // Find matching route - find-my-way already parses the querystring
+      const result = router.find('GET', pathname, { searchParams: queryString })
       const matchingRule = result ? result.handler() : null
 
-      // Parse querystring into object for fgh - find-my-way doesn't parse querystring by default
-      const querystring = {}
-      if (queryIndex !== -1) {
-        const queryStr = path.substring(queryIndex + 1)
-        const searchParams = new URLSearchParams(queryStr)
-        for (const [key, value] of searchParams.entries()) {
-          querystring[key] = value
+      // Prepare request context for tag evaluation with properly parsed querystring params
+      const context = matchingRule
+        ? {
+          path: pathname,
+          params: result.params || {},
+          // Convert searchParams to the expected format for existing code
+          querystring: result && result.searchParams 
+            ? Object.fromEntries(
+                Object.entries(result.searchParams).map(([key, value]) => 
+                  // Handle string values
+                  [key, value]
+                )
+              ) 
+            : {}
         }
-      }
-
-      // Prepare request context for tag evaluation
-      const context = {
-        path: pathname,
-        params: result ? result.params : {},
-        querystring
-      }
+        : null
 
       // Create a handler wrapper that will modify the response headers
       return dispatch(options, {
@@ -165,8 +167,8 @@ export function createInterceptor (rules, options = {}) {
               rawHeaders.push('cache-control', matchingRule.cacheControl)
             }
 
-            // Add x-cache-tags header if rule has compiled cache tags
-            if (matchingRule.compiledCacheTags && matchingRule.compiledCacheTags.length > 0) {
+            // Add x-cache-tags header if rule has compiled cache tags and we have a context
+            if (matchingRule.compiledCacheTags && matchingRule.compiledCacheTags.length > 0 && context) {
               let hasCacheTags = false
               for (let i = 0; i < rawHeaders.length; i += 2) {
                 const headerName = String(rawHeaders[i]).toLowerCase()
