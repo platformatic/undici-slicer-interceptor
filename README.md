@@ -11,9 +11,9 @@ npm install make-cacheable-interceptor
 ## Features
 
 - Automatically adds cache-control headers to HTTP responses based on URL patterns
-- Adds x-cache-tags headers for fine-grained cache invalidation strategies
+- Adds cache tag headers for fine-grained cache invalidation strategies
 - Uses find-my-way for efficient URL routing and matching
-- Respects existing cache-control and x-cache-tags headers (never overrides them)
+- Respects existing cache-control and cache tag headers (never overrides them)
 - Only applies to GET and HEAD requests
 - Supports wildcards and route parameters
 - Handles nested routes with proper precedence (more specific routes take priority)
@@ -85,6 +85,7 @@ The interceptor accepts the following find-my-way options as a second parameter:
 | `maxParamLength` | number | `100` | The maximum length of a parameter |
 | `caseSensitive` | boolean | `true` | When set to `true`, `/api/users` and `/api/Users` will be treated as different routes |
 | `useSemicolonDelimiter` | boolean | `false` | When set to `true`, use semicolon instead of ampersand as query parameter delimiter |
+| `cacheTagsHeader` | string | `'x-cache-tags'` | The name of the header to use for cache tags |
 
 Example with options:
 
@@ -96,7 +97,8 @@ const interceptor = createInterceptor(
   {
     ignoreTrailingSlash: true,
     caseSensitive: false,
-    ignoreDuplicateSlashes: true
+    ignoreDuplicateSlashes: true,
+    cacheTagsHeader: 'x-custom-cache-tags' // Use a custom header name for cache tags
   }
 )
 ```
@@ -134,7 +136,7 @@ When defining rules, more specific paths take precedence over more general ones.
 
 ## Cache Tags
 
-Cache tags provide a powerful way to implement targeted cache invalidation strategies. You can dynamically generate `x-cache-tags` headers based on URL path patterns, route parameters, and query string values.
+Cache tags provide a powerful way to implement targeted cache invalidation strategies. You can dynamically generate cache tag headers based on URL path patterns, route parameters, and query string values. By default, these are added as `x-cache-tags` headers, but you can customize the header name using the `cacheTagsHeader` option.
 
 ### Basic Usage
 
@@ -227,7 +229,7 @@ This will use the `variant` query parameter if present, or fall back to `'defaul
 }
 ```
 
-This will add `x-cache-tags: static,cdn` to all matching responses.
+This will add `x-cache-tags: static,cdn` to all matching responses (or your custom header name if specified).
 
 #### User-specific Resources
 
@@ -239,7 +241,7 @@ This will add `x-cache-tags: static,cdn` to all matching responses.
 }
 ```
 
-For `/users/123`, this adds `x-cache-tags: user-123,type-user`.
+For `/users/123`, this adds `x-cache-tags: user-123,type-user` (or your custom header name if specified).
 
 #### Product Categories
 
@@ -251,7 +253,7 @@ For `/users/123`, this adds `x-cache-tags: user-123,type-user`.
 }
 ```
 
-For `/products?category=electronics`, this adds `x-cache-tags: electronics,products`.
+For `/products?category=electronics`, this adds `x-cache-tags: electronics,products` (or your custom header name if specified).
 
 #### Complex API Paths
 
@@ -264,7 +266,7 @@ For `/products?category=electronics`, this adds `x-cache-tags: electronics,produ
 ```
 
 For `/api/v1/categories/electronics/products/laptop-123?variant=premium`, this adds:
-`x-cache-tags: api-version-v1,category-electronics,product-laptop-123,premium`
+`x-cache-tags: api-version-v1,category-electronics,product-laptop-123,premium` (or your custom header name if specified)
 
 ### Error Handling
 
@@ -290,6 +292,32 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 2. Skip the failed expression
 3. Continue with other valid expressions
 
+### Custom Cache Tag Header
+
+You can customize the name of the header used for cache tags by setting the `cacheTagsHeader` option:
+
+```js
+const interceptor = createInterceptor(
+  [
+    {
+      routeToMatch: '/products/:id',
+      cacheControl: 'public, max-age=3600',
+      cacheTags: "'product-' + .params.id, 'category-all'"
+    }
+  ],
+  {
+    cacheTagsHeader: 'x-purge-tags' // Use custom header name instead of 'x-cache-tags'
+  }
+)
+```
+
+With this configuration, for a request to `/products/123`, the response will include:
+```
+x-purge-tags: product-123,category-all
+```
+
+This is particularly useful when integrating with different CDN providers or cache systems that use specific header names for cache invalidation.
+
 ### Best Practices
 
 1. **Start simple**: Begin with static tags for broad categories
@@ -303,7 +331,7 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 ## Notes
 
 - The interceptor only adds cache-control headers if none exist in the response
-- The interceptor only adds x-cache-tags headers if none exist in the response
+- The interceptor only adds cache tag headers if none exist in the response
 - Headers are only added to GET and HEAD requests
 - The interceptor respects the find-my-way pattern syntax
 - You must explicitly add wildcards (`*`) in your patterns when needed
