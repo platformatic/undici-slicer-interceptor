@@ -1,7 +1,6 @@
-'use strict'
-
-import findMyWay from 'find-my-way'
-import { compile } from 'fgh'
+import { validateRules, sortRulesBySpecificity } from './lib/validator.js'
+import { createRouter } from './lib/router.js'
+import { createInterceptorFunction } from './lib/interceptor.js'
 
 /**
  * Creates an undici interceptor that adds cache-control headers based on specified rules.
@@ -70,155 +69,16 @@ import { compile } from 'fgh'
 export function createInterceptor (rules, options = {}) {
   // Default option for cache tags header name
   const cacheTagsHeader = options.cacheTagsHeader || 'x-cache-tags'
+
   // Validate rules
-  if (!Array.isArray(rules)) {
-    throw new Error('Rules must be an array')
-  }
+  validateRules(rules)
 
-  // Validate each rule
-  for (const rule of rules) {
-    if (!rule.routeToMatch || typeof rule.routeToMatch !== 'string') {
-      throw new Error('Each rule must have a routeToMatch string')
-    }
-    if (!rule.cacheControl || typeof rule.cacheControl !== 'string') {
-      throw new Error('Each rule must have a cacheControl string')
-    }
-  }
+  // Sort rules by specificity
+  const sortedRules = sortRulesBySpecificity(rules)
 
-  // Sort rules by path length (longest first) to ensure more specific routes are registered first
-  const sortedRules = [...rules].sort((a, b) =>
-    b.routeToMatch.length - a.routeToMatch.length
-  )
+  // Create and configure router
+  const router = createRouter(sortedRules, options)
 
-  // Create router instance with the provided options
-  const router = findMyWay({
-    ignoreTrailingSlash: options.ignoreTrailingSlash !== undefined ? options.ignoreTrailingSlash : false,
-    ignoreDuplicateSlashes: options.ignoreDuplicateSlashes !== undefined ? options.ignoreDuplicateSlashes : false,
-    maxParamLength: options.maxParamLength !== undefined ? options.maxParamLength : 100,
-    caseSensitive: options.caseSensitive !== undefined ? options.caseSensitive : true,
-    useSemicolonDelimiter: options.useSemicolonDelimiter !== undefined ? options.useSemicolonDelimiter : false,
-    defaultRoute: () => null
-  })
-
-  // Register all rules with the router
-  for (const rule of sortedRules) {
-    // Pre-compile the cache tag expression if present
-    if (rule.cacheTags && typeof rule.cacheTags === 'string') {
-      try {
-        rule.compiledCacheTag = compile(rule.cacheTags)
-      } catch (err) {
-        throw new Error(`Error compiling cache tag expression: ${rule.cacheTags}. ${err.message}`)
-      }
-    }
-
-    // Register the route exactly as provided by the user
-    router.on('GET', rule.routeToMatch, () => rule)
-  }
-
-  // Return the interceptor function
-  return function cachingInterceptor (dispatch) {
-    return function cachedDispatch (options, handler) {
-      // Get the path from options
-      const path = options.path || ''
-
-      // Find matching route - pass the entire path to find-my-way
-      // find-my-way will handle the path and querystring parsing
-      const result = router.find('GET', path)
-      const matchingRule = result ? result.handler() : null
-
-      // Prepare request context for tag evaluation
-      const context = matchingRule
-        ? {
-            path: result.path || path,
-            params: result.params || {},
-            querystring: result.searchParams || {},
-            // Added support for normalized header access
-            // Convert all header keys to lowercase for consistent access
-            headers: (() => {
-              const normalizedHeaders = {}
-              const headers = options.headers || {}
-              for (const key in headers) {
-                normalizedHeaders[key.toLowerCase()] = headers[key]
-              }
-              return normalizedHeaders
-            })()
-          }
-        : null
-
-      // Create a handler wrapper that will modify the response headers
-      return dispatch(options, {
-        // Pass through original handler methods
-        onConnect: handler.onConnect?.bind(handler),
-        onError: handler.onError?.bind(handler),
-        onUpgrade: handler.onUpgrade?.bind(handler),
-
-        // Intercept onHeaders to modify headers
-        onHeaders: function (statusCode, rawHeaders, resume, statusMessage) {
-          // Only modify headers if we have a matching rule and it's a GET or HEAD request
-          const method = options.method ? options.method.toUpperCase() : 'GET'
-          if (matchingRule && (method === 'GET' || method === 'HEAD')) {
-            // Check if there's already a cache-control header
-            let hasCacheControl = false
-            for (let i = 0; i < rawHeaders.length; i += 2) {
-              const headerName = String(rawHeaders[i]).toLowerCase()
-              if (headerName === 'cache-control') {
-                hasCacheControl = true
-                break
-              }
-            }
-
-            // Only add our cache-control header if one doesn't exist
-            if (!hasCacheControl) {
-              rawHeaders.push('cache-control', matchingRule.cacheControl)
-            }
-
-            // Add cache tags header if rule has a compiled cache tag and we have a context
-            if (matchingRule.compiledCacheTag && context) {
-              let hasCacheTags = false
-              for (let i = 0; i < rawHeaders.length; i += 2) {
-                const headerName = String(rawHeaders[i]).toLowerCase()
-                if (headerName === cacheTagsHeader.toLowerCase()) {
-                  hasCacheTags = true
-                  break
-                }
-              }
-
-              if (!hasCacheTags) {
-                // Evaluate the tag expression and collect results
-                const evaluatedTags = []
-
-                try {
-                  // Use the pre-compiled fgh expression
-                  const tagResults = matchingRule.compiledCacheTag(context)
-
-                  // Only add non-null, non-undefined tag values
-                  for (const tag of tagResults) {
-                    if (tag != null && tag !== '') {
-                      evaluatedTags.push(String(tag))
-                    }
-                  }
-                } catch (err) {
-                  // Skip expression if it fails at runtime
-                  console.error(`Error evaluating cache tag expression: ${matchingRule.cacheTags}`, err)
-                }
-
-                // Add the cache tags header if we have any evaluated tags
-                if (evaluatedTags.length > 0) {
-                  rawHeaders.push(cacheTagsHeader, evaluatedTags.join(','))
-                }
-              }
-            }
-          }
-
-          // Call the original handler with the modified headers
-          return handler.onHeaders(statusCode, rawHeaders, resume, statusMessage)
-        },
-
-        // Pass through other handler methods
-        onData: handler.onData?.bind(handler),
-        onComplete: handler.onComplete?.bind(handler),
-        onBodySent: handler.onBodySent?.bind(handler)
-      })
-    }
-  }
+  // Create and return the interceptor function
+  return createInterceptorFunction(router, cacheTagsHeader)
 }

@@ -40,8 +40,11 @@ describe('make-cacheable-interceptor - handler methods', () => {
       }
 
       // Create a manual dispatcher for testing
+      let resolvePromise, rejectPromise
       const requestPromise = new Promise((resolve, reject) => {
-        const clientRequest = agent.dispatch(
+        resolvePromise = resolve
+        rejectPromise = reject
+        agent.dispatch(
           {
             method: 'POST', // Use POST to test method checking
             headers: {
@@ -62,7 +65,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
             },
             onError: (err) => {
               methodsCalled.onError = true
-              reject(err)
+              rejectPromise(err)
             },
             onHeaders: (statusCode, headers, resume) => {
               methodsCalled.onHeaders = true
@@ -74,7 +77,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
             },
             onComplete: () => {
               methodsCalled.onComplete = true
-              resolve(methodsCalled)
+              resolvePromise(methodsCalled)
             },
             onBodySent: () => {
               methodsCalled.onBodySent = true
@@ -84,7 +87,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
       })
 
       // Apply our interceptor to the request
-      const interceptedRequest = interceptor(agent.dispatch.bind(agent))(
+      interceptor(agent.dispatch.bind(agent))(
         {
           method: 'POST',
           headers: {
@@ -105,7 +108,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
           },
           onError: (err) => {
             methodsCalled.onError = true
-            reject(err)
+            rejectPromise(err)
           },
           onHeaders: (statusCode, headers, resume) => {
             methodsCalled.onHeaders = true
@@ -117,7 +120,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
           },
           onComplete: () => {
             methodsCalled.onComplete = true
-            resolve(methodsCalled)
+            resolvePromise(methodsCalled)
           },
           onBodySent: () => {
             methodsCalled.onBodySent = true
