@@ -1,22 +1,27 @@
 'use strict'
 
 import findMyWay from 'find-my-way'
+import { compile } from 'fgh'
 
 /**
  * Creates an undici interceptor that adds cache-control headers based on specified rules.
  * The interceptor uses a router to match the request path and applies the corresponding
  * cache-control header to the response, but only for GET and HEAD requests, and only if
- * no cache-control header already exists.
+ * no cache-control header already exists. It can also add cache tags headers based on
+ * jq-style rules implemented via fgh.
  *
- * @param {Array<{routeToMatch: string, cacheControl: string}>} rules - Array of rules for cache control
+ * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: string}>} rules - Array of rules for cache control
  * @param {string} rules[].routeToMatch - Path pattern to match for applying the cache rule
  * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
+ * @param {string} [rules[].cacheTags] - JQ-style expression via fgh to generate cache tags from params, querystring, and request headers.
+ * For multiple values, use comma-separated syntax like ".params.id, 'static'" or ".,." for multiple outputs.
  * @param {Object} [options] - Options for the find-my-way router
  * @param {boolean} [options.ignoreTrailingSlash=false] - Ignore trailing slashes in routes
  * @param {boolean} [options.ignoreDuplicateSlashes=false] - Ignore duplicate slashes in routes
  * @param {number} [options.maxParamLength=100] - Maximum length of a parameter
  * @param {boolean} [options.caseSensitive=true] - Use case sensitive routing
  * @param {boolean} [options.useSemicolonDelimiter=false] - Use semicolon instead of ampersand as query param delimiter
+ * @param {string} [options.cacheTagsHeader='x-cache-tags'] - The name of the header to use for cache tags
  * @returns {Function} - An undici interceptor function that can be composed with a dispatcher
  *
  * @example
@@ -27,19 +32,44 @@ import findMyWay from 'find-my-way'
  * const agent = new Agent()
  * const interceptor = createInterceptor(
  *   [
- *     { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' },
- *     { routeToMatch: '/api/*', cacheControl: 'no-store' }
+ *     {
+ *       routeToMatch: '/static/*',
+ *       cacheControl: 'public, max-age=86400',
+ *       cacheTags: "'static'"
+ *     },
+ *     {
+ *       routeToMatch: '/users/:id',
+ *       cacheControl: 'public, max-age=3600',
+ *       cacheTags: "'user-' + .params.id"
+ *     },
+ *     {
+ *       routeToMatch: '/api/products',
+ *       cacheControl: 'public, max-age=3600',
+ *       cacheTags: ".querystring.category"
+ *     },
+ *     {
+ *       routeToMatch: '/api/auth',
+ *       cacheControl: 'public, max-age=600',
+ *       cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
+ *     }
  *   ],
- *   { ignoreTrailingSlash: true, caseSensitive: false }
+ *   {
+ *     ignoreTrailingSlash: true,
+ *     caseSensitive: false,
+ *     cacheTagsHeader: 'x-custom-cache-tags'
+ *   }
  * )
  *
  * // This will add cache-control headers to GET and HEAD requests
- * // that don't already have a cache-control header
+ * // that don't already have a cache-control header, and cache tags
+ * // headers based on the provided jq-style expressions
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)
  * ```
  */
 export function createInterceptor (rules, options = {}) {
+  // Default option for cache tags header name
+  const cacheTagsHeader = options.cacheTagsHeader || 'x-cache-tags'
   // Validate rules
   if (!Array.isArray(rules)) {
     throw new Error('Rules must be an array')
@@ -72,8 +102,17 @@ export function createInterceptor (rules, options = {}) {
 
   // Register all rules with the router
   for (const rule of sortedRules) {
+    // Pre-compile the cache tag expression if present
+    if (rule.cacheTags && typeof rule.cacheTags === 'string') {
+      try {
+        rule.compiledCacheTag = compile(rule.cacheTags)
+      } catch (err) {
+        throw new Error(`Error compiling cache tag expression: ${rule.cacheTags}. ${err.message}`)
+      }
+    }
+
     // Register the route exactly as provided by the user
-    router.on('GET', rule.routeToMatch, () => rule.cacheControl)
+    router.on('GET', rule.routeToMatch, () => rule)
   }
 
   // Return the interceptor function
@@ -82,16 +121,29 @@ export function createInterceptor (rules, options = {}) {
       // Get the path from options
       const path = options.path || ''
 
-      // Extract the pathname from the path (which might include querystring)
-      let pathname = path
-      const queryIndex = path.indexOf('?')
-      if (queryIndex !== -1) {
-        pathname = path.substring(0, queryIndex)
-      }
-
-      // Find matching route
-      const result = router.find('GET', pathname)
+      // Find matching route - pass the entire path to find-my-way
+      // find-my-way will handle the path and querystring parsing
+      const result = router.find('GET', path)
       const matchingRule = result ? result.handler() : null
+
+      // Prepare request context for tag evaluation
+      const context = matchingRule
+        ? {
+            path: result.path || path,
+            params: result.params || {},
+            querystring: result.searchParams || {},
+            // Added support for normalized header access
+            // Convert all header keys to lowercase for consistent access
+            headers: (() => {
+              const normalizedHeaders = {}
+              const headers = options.headers || {}
+              for (const key in headers) {
+                normalizedHeaders[key.toLowerCase()] = headers[key]
+              }
+              return normalizedHeaders
+            })()
+          }
+        : null
 
       // Create a handler wrapper that will modify the response headers
       return dispatch(options, {
@@ -117,7 +169,44 @@ export function createInterceptor (rules, options = {}) {
 
             // Only add our cache-control header if one doesn't exist
             if (!hasCacheControl) {
-              rawHeaders.push('cache-control', matchingRule)
+              rawHeaders.push('cache-control', matchingRule.cacheControl)
+            }
+
+            // Add cache tags header if rule has a compiled cache tag and we have a context
+            if (matchingRule.compiledCacheTag && context) {
+              let hasCacheTags = false
+              for (let i = 0; i < rawHeaders.length; i += 2) {
+                const headerName = String(rawHeaders[i]).toLowerCase()
+                if (headerName === cacheTagsHeader.toLowerCase()) {
+                  hasCacheTags = true
+                  break
+                }
+              }
+
+              if (!hasCacheTags) {
+                // Evaluate the tag expression and collect results
+                const evaluatedTags = []
+
+                try {
+                  // Use the pre-compiled fgh expression
+                  const tagResults = matchingRule.compiledCacheTag(context)
+
+                  // Only add non-null, non-undefined tag values
+                  for (const tag of tagResults) {
+                    if (tag != null && tag !== '') {
+                      evaluatedTags.push(String(tag))
+                    }
+                  }
+                } catch (err) {
+                  // Skip expression if it fails at runtime
+                  console.error(`Error evaluating cache tag expression: ${matchingRule.cacheTags}`, err)
+                }
+
+                // Add the cache tags header if we have any evaluated tags
+                if (evaluatedTags.length > 0) {
+                  rawHeaders.push(cacheTagsHeader, evaluatedTags.join(','))
+                }
+              }
             }
           }
 
