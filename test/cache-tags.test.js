@@ -24,7 +24,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/static/*',
           cacheControl: 'public, max-age=86400',
-          cacheTags: ["'static'", "'cdn'"]
+          cacheTags: "'static', 'cdn'"
         }
       ])
 
@@ -63,7 +63,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/users/:userId',
           cacheControl: 'private, max-age=3600',
-          cacheTags: ["'user-' + .params.userId", "'type-user'"]
+          cacheTags: "'user-' + .params.userId, 'type-user'"
         }
       ])
 
@@ -102,7 +102,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/products',
           cacheControl: 'public, max-age=3600',
-          cacheTags: ['.querystring.category', "'products'"]
+          cacheTags: ".querystring.category, 'products'"
         }
       ])
 
@@ -141,12 +141,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/api/:version/categories/:categoryId/products/:productId',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [
-            "'api-version-' + .params.version",
-            "'category-' + .params.categoryId",
-            "'product-' + .params.productId",
-            ".querystring.variant // 'default'"
-          ]
+          cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
         }
       ])
 
@@ -190,9 +185,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/invalid-test',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [
-            'invalid[expression' // This should cause an error during compilation
-          ]
+          cacheTags: 'invalid[expression' // This should cause an error during compilation
         }
       ])
     }, /Error compiling cache tag expression: invalid\[expression/)
@@ -256,7 +249,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
         {
           routeToMatch: '/respect-existing',
           cacheControl: 'public, max-age=3600',
-          cacheTags: ["'should-not-appear'"]
+          cacheTags: "'should-not-appear'"
         }
       ])
 

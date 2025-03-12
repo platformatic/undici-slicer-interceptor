@@ -24,7 +24,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/with-headers',
           cacheControl: 'public, max-age=3600',
-          cacheTags: ['.headers["x-user-id"]', "'api'"]
+          cacheTags: '.headers["x-user-id"], "api"'
         }
       ])
 
@@ -66,11 +66,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/complex-headers/:resource',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [
-            '.headers["x-tenant-id"]',
-            ".headers[\"x-api-version\"] // 'v1'", // Default to v1 if not present
-            "'tenant-' + .headers[\"x-tenant-id\"] + '-' + .params.resource"
-          ]
+          cacheTags: '.headers["x-tenant-id"], .headers["x-api-version"] // "v1", "tenant-" + .headers["x-tenant-id"] + "-" + .params.resource'
         }
       ])
 
@@ -134,12 +130,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/:version/resources/:resource',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [
-            "'api-version-' + .params.version",
-            "'resource-' + .params.resource",
-            ".headers[\"x-tenant-id\"] // 'default'",
-            '.querystring.filter'
-          ]
+          cacheTags: '"api-version-" + .params.version, "resource-" + .params.resource, .headers["x-tenant-id"] // "default", .querystring.filter'
         }
       ])
 
@@ -184,7 +175,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/case-insensitive-headers',
           cacheControl: 'public, max-age=3600',
-          cacheTags: ['.headers["authorization"]']
+          cacheTags: '.headers["authorization"]'
         }
       ])
 
