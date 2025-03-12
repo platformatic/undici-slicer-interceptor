@@ -126,20 +126,20 @@ export function createInterceptor (rules, options = {}) {
       // Prepare request context for tag evaluation
       const context = matchingRule
         ? {
-          path: result.path || path,
-          params: result.params || {},
-          querystring: result.searchParams || {},
-          // Added support for normalized header access
-          // Convert all header keys to lowercase for consistent access
-          headers: (() => {
-            const normalizedHeaders = {};
-            const headers = options.headers || {};
-            for (const key in headers) {
-              normalizedHeaders[key.toLowerCase()] = headers[key];
-            }
-            return normalizedHeaders;
-          })()
-        }
+            path: result.path || path,
+            params: result.params || {},
+            querystring: result.searchParams || {},
+            // Added support for normalized header access
+            // Convert all header keys to lowercase for consistent access
+            headers: (() => {
+              const normalizedHeaders = {}
+              const headers = options.headers || {}
+              for (const key in headers) {
+                normalizedHeaders[key.toLowerCase()] = headers[key]
+              }
+              return normalizedHeaders
+            })()
+          }
         : null
 
       // Create a handler wrapper that will modify the response headers

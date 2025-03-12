@@ -24,7 +24,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/with-headers',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [".headers[\"x-user-id\"]", "'api'"]
+          cacheTags: ['.headers["x-user-id"]', "'api'"]
         }
       ])
 
@@ -67,7 +67,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
           routeToMatch: '/api/complex-headers/:resource',
           cacheControl: 'public, max-age=3600',
           cacheTags: [
-            ".headers[\"x-tenant-id\"]",
+            '.headers["x-tenant-id"]',
             ".headers[\"x-api-version\"] // 'v1'", // Default to v1 if not present
             "'tenant-' + .headers[\"x-tenant-id\"] + '-' + .params.resource"
           ]
@@ -138,7 +138,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
             "'api-version-' + .params.version",
             "'resource-' + .params.resource",
             ".headers[\"x-tenant-id\"] // 'default'",
-            ".querystring.filter"
+            '.querystring.filter'
           ]
         }
       ])
@@ -184,7 +184,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: '/api/case-insensitive-headers',
           cacheControl: 'public, max-age=3600',
-          cacheTags: [".headers[\"authorization\"]"]
+          cacheTags: ['.headers["authorization"]']
         }
       ])
 
@@ -198,7 +198,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         origin: serverUrl,
         path: '/api/case-insensitive-headers',
         headers: {
-          'Authorization': 'Bearer token123'
+          Authorization: 'Bearer token123'
         }
       })
 
