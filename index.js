@@ -1,16 +1,19 @@
 'use strict'
 
 import findMyWay from 'find-my-way'
+import { compile } from 'fgh'
 
 /**
  * Creates an undici interceptor that adds cache-control headers based on specified rules.
  * The interceptor uses a router to match the request path and applies the corresponding
  * cache-control header to the response, but only for GET and HEAD requests, and only if
- * no cache-control header already exists.
+ * no cache-control header already exists. It can also add x-cache-tags headers based on
+ * jq-style rules implemented via fgh.
  *
- * @param {Array<{routeToMatch: string, cacheControl: string}>} rules - Array of rules for cache control
+ * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: Array<string>}>} rules - Array of rules for cache control
  * @param {string} rules[].routeToMatch - Path pattern to match for applying the cache rule
  * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
+ * @param {Array<string>} [rules[].cacheTags] - Array of jq-style expressions to generate cache tags
  * @param {Object} [options] - Options for the find-my-way router
  * @param {boolean} [options.ignoreTrailingSlash=false] - Ignore trailing slashes in routes
  * @param {boolean} [options.ignoreDuplicateSlashes=false] - Ignore duplicate slashes in routes
@@ -27,14 +30,28 @@ import findMyWay from 'find-my-way'
  * const agent = new Agent()
  * const interceptor = createInterceptor(
  *   [
- *     { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' },
- *     { routeToMatch: '/api/*', cacheControl: 'no-store' }
+ *     {
+ *       routeToMatch: '/static/*',
+ *       cacheControl: 'public, max-age=86400',
+ *       cacheTags: ["'static'"]
+ *     },
+ *     {
+ *       routeToMatch: '/users/:id',
+ *       cacheControl: 'public, max-age=3600',
+ *       cacheTags: ["'user-' + .params.id"]
+ *     },
+ *     {
+ *       routeToMatch: '/api/products',
+ *       cacheControl: 'public, max-age=3600',
+ *       cacheTags: [".querystring.category"]
+ *     }
  *   ],
  *   { ignoreTrailingSlash: true, caseSensitive: false }
  * )
  *
  * // This will add cache-control headers to GET and HEAD requests
- * // that don't already have a cache-control header
+ * // that don't already have a cache-control header, and x-cache-tags
+ * // headers based on the provided jq-style expressions
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)
  * ```
@@ -72,8 +89,19 @@ export function createInterceptor (rules, options = {}) {
 
   // Register all rules with the router
   for (const rule of sortedRules) {
+    // Pre-compile the cache tag expressions if present
+    if (rule.cacheTags && Array.isArray(rule.cacheTags)) {
+      rule.compiledCacheTags = rule.cacheTags.map(expr => {
+        try {
+          return { expression: expr, compiled: compile(expr) }
+        } catch (err) {
+          throw new Error(`Error compiling cache tag expression: ${expr}. ${err.message}`)
+        }
+      })
+    }
+
     // Register the route exactly as provided by the user
-    router.on('GET', rule.routeToMatch, () => rule.cacheControl)
+    router.on('GET', rule.routeToMatch, () => rule)
   }
 
   // Return the interceptor function
@@ -92,6 +120,23 @@ export function createInterceptor (rules, options = {}) {
       // Find matching route
       const result = router.find('GET', pathname)
       const matchingRule = result ? result.handler() : null
+
+      // Parse querystring into object for fgh - find-my-way doesn't parse querystring by default
+      const querystring = {}
+      if (queryIndex !== -1) {
+        const queryStr = path.substring(queryIndex + 1)
+        const searchParams = new URLSearchParams(queryStr)
+        for (const [key, value] of searchParams.entries()) {
+          querystring[key] = value
+        }
+      }
+
+      // Prepare request context for tag evaluation
+      const context = {
+        path: pathname,
+        params: result ? result.params : {},
+        querystring
+      }
 
       // Create a handler wrapper that will modify the response headers
       return dispatch(options, {
@@ -117,7 +162,46 @@ export function createInterceptor (rules, options = {}) {
 
             // Only add our cache-control header if one doesn't exist
             if (!hasCacheControl) {
-              rawHeaders.push('cache-control', matchingRule)
+              rawHeaders.push('cache-control', matchingRule.cacheControl)
+            }
+
+            // Add x-cache-tags header if rule has compiled cache tags
+            if (matchingRule.compiledCacheTags && matchingRule.compiledCacheTags.length > 0) {
+              let hasCacheTags = false
+              for (let i = 0; i < rawHeaders.length; i += 2) {
+                const headerName = String(rawHeaders[i]).toLowerCase()
+                if (headerName === 'x-cache-tags') {
+                  hasCacheTags = true
+                  break
+                }
+              }
+
+              if (!hasCacheTags) {
+                // Evaluate each tag expression and collect results
+                const evaluatedTags = []
+
+                for (const tagInfo of matchingRule.compiledCacheTags || []) {
+                  try {
+                    // Use the pre-compiled fgh expression
+                    const tagResults = tagInfo.compiled(context)
+
+                    // Only add non-null, non-undefined tag values
+                    for (const tag of tagResults) {
+                      if (tag != null && tag !== '') {
+                        evaluatedTags.push(String(tag))
+                      }
+                    }
+                  } catch (err) {
+                    // Skip expressions that fail at runtime
+                    console.error(`Error evaluating cache tag expression: ${tagInfo.expression}`, err)
+                  }
+                }
+
+                // Add the x-cache-tags header if we have any evaluated tags
+                if (evaluatedTags.length > 0) {
+                  rawHeaders.push('x-cache-tags', evaluatedTags.join(','))
+                }
+              }
             }
           }
 
