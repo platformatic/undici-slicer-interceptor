@@ -53,8 +53,8 @@ import { compile } from 'fgh'
  *       cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
  *     }
  *   ],
- *   { 
- *     ignoreTrailingSlash: true, 
+ *   {
+ *     ignoreTrailingSlash: true,
  *     caseSensitive: false,
  *     cacheTagsHeader: 'x-custom-cache-tags'
  *   }
