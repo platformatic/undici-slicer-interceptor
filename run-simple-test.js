@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Test file to run
-const testFile = join(__dirname, 'test', 'origin-route-format.test.js');
+const testFile = join(__dirname, 'test', 'simplified-origin-test.js');
 
 console.log(`Running test file: ${testFile}`);
 
@@ -19,10 +19,10 @@ const testProcess = spawn('node', ['--test', testFile], {
 
 // Set a timeout to avoid hanging
 const timeout = setTimeout(() => {
-  console.error('Test execution timed out after 20 seconds');
+  console.error('Test execution timed out after 10 seconds');
   testProcess.kill();
   process.exit(1);
-}, 20000);
+}, 10000);
 
 testProcess.on('exit', (code) => {
   clearTimeout(timeout);

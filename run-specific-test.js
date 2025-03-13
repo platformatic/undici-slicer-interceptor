@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Test file to run
-const testFile = join(__dirname, 'test', 'origin-route-format.test.js');
+const testFile = join(__dirname, 'test', 'per-origin-matching.test.js');
 
 console.log(`Running test file: ${testFile}`);
 
