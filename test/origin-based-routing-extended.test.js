@@ -9,22 +9,21 @@ import { parseRouteWithOrigin, extractOrigin } from '../lib/router.js'
 describe('make-cacheable-interceptor - origin extraction', () => {
   test('should correctly extract origin from different request formats', () => {
     // Test with origin URL
-    assert.strictEqual(
-      extractOrigin({ origin: 'http://example.com:3000' }),
-      'example.com:3000'
-    )
-
+    const result1 = extractOrigin({ origin: 'http://example.com:3000' })
+    assert.strictEqual(result1.origin, 'example.com:3000')
+    assert.strictEqual(result1.hasProtocol, true)
+    
     // Test with host header
-    assert.strictEqual(
-      extractOrigin({ headers: { host: 'example.com:3000' } }),
-      'example.com:3000'
-    )
-
+    const result2 = extractOrigin({ headers: { host: 'example.com:3000' } })
+    assert.strictEqual(result2.origin, 'example.com:3000')
+    assert.strictEqual(result2.hasProtocol, false)
+    assert.strictEqual(result2.fromHostHeader, true)
+    
     // Test with hostname and port
-    assert.strictEqual(
-      extractOrigin({ hostname: 'example.com', port: 3000 }),
-      'example.com:3000'
-    )
+    const result3 = extractOrigin({ hostname: 'example.com', port: 3000 })
+    assert.strictEqual(result3.origin, 'example.com:3000')
+    assert.strictEqual(result3.hasProtocol, false)
+    assert.strictEqual(result3.fromHostHeader, false)
   })
   
   test('should parse routes with origin correctly', () => {
