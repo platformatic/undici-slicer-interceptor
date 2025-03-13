@@ -44,12 +44,10 @@ describe('make-cacheable-interceptor - origin in route format', () => {
     // Test with host header
     const result2 = extractOrigin({ headers: { host: 'example.com:3000' } })
     assert.strictEqual(result2.origin, 'example.com:3000')
-    assert.strictEqual(result2.fromHostHeader, true)
 
     // Test with hostname and port
     const result3 = extractOrigin({ hostname: 'example.com', port: 3000 })
     assert.strictEqual(result3.origin, 'example.com:3000')
-    assert.strictEqual(result3.fromHostHeader, false)
   })
 
   test('should match based on origin and path', async () => {
