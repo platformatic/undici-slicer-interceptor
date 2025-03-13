@@ -31,32 +31,32 @@ const interceptor = createInterceptor(
   [
     // More specific rules should come first
     { 
-      routeToMatch: 'example.com/static/images/*', 
+      routeToMatch: 'http://example.com/static/images/*', 
       cacheControl: 'public, max-age=604800',
       cacheTags: "'static', 'images'" 
     }, // 1 week for images
     { 
-      routeToMatch: 'example.com/static/*', 
+      routeToMatch: 'http://example.com/static/*', 
       cacheControl: 'public, max-age=86400',
       cacheTags: "'static', 'content'"
     }, // 1 day for other static content
     { 
-      routeToMatch: 'example.com/users/:userId', 
+      routeToMatch: 'https://example.com/users/:userId', 
       cacheControl: 'private, max-age=3600',
       cacheTags: "'user', 'user-' + .params.userId" 
     }, // 1 hour for user profiles with user-specific tag
     { 
-      routeToMatch: 'api.example.com/v1/products/:productId', 
+      routeToMatch: 'http://api.example.com/v1/products/:productId', 
       cacheControl: 'public, max-age=1800',
       cacheTags: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" 
     }, // 30 minutes for product data with tags based on product ID and variant
     { 
-      routeToMatch: 'api.example.com/v1/cache/*', 
+      routeToMatch: 'https://api.example.com/v1/cache/*', 
       cacheControl: 'public, max-age=3600',
       cacheTags: "'api', 'v1', 'cacheable'"
     }, // 1 hour for cacheable API
     { 
-      routeToMatch: 'api.example.com/*', 
+      routeToMatch: 'https://api.example.com/*', 
       cacheControl: 'no-store',
       cacheTags: "'api'"
     } // No caching for other API endpoints
@@ -93,7 +93,7 @@ Example with options:
 ```js
 const interceptor = createInterceptor(
   [
-    { routeToMatch: 'api.example.com/users', cacheControl: 'no-store' }
+    { routeToMatch: 'http://api.example.com/users', cacheControl: 'no-store' }
   ],
   {
     ignoreTrailingSlash: true,
@@ -112,15 +112,17 @@ The interceptor uses origin-based routing, where each route pattern must include
 
 Routes must follow this format:
 ```
-hostname[:port]/path
+[http(s)://]hostname[:port]/path
 ```
 
 For example:
 ```
-example.com/api/users
-api.example.com:3000/products
-localhost:8080/static/*
+http://example.com/api/users
+https://api.example.com:3000/products
+http://localhost:8080/static/*
 ```
+
+The protocol (http:// or https://) is optional but recommended for clarity.
 
 ### Origin Matching
 
@@ -136,29 +138,29 @@ The path part of the route uses [find-my-way](https://github.com/delvedor/find-m
 #### Simple paths
 
 ```js
-{ routeToMatch: 'api.example.com/users', cacheControl: 'no-store' }
+{ routeToMatch: 'http://api.example.com/users', cacheControl: 'no-store' }
 ```
 
 #### Wildcard paths
 
 ```js
-{ routeToMatch: 'cdn.example.com/static/*', cacheControl: 'public, max-age=86400' }
+{ routeToMatch: 'https://cdn.example.com/static/*', cacheControl: 'public, max-age=86400' }
 ```
 
 #### Route parameters
 
 ```js
-{ routeToMatch: 'api.example.com/users/:userId', cacheControl: 'private, max-age=3600' }
-{ routeToMatch: 'api.example.com/products/:category/:productId', cacheControl: 'public, max-age=86400' }
+{ routeToMatch: 'http://api.example.com/users/:userId', cacheControl: 'private, max-age=3600' }
+{ routeToMatch: 'https://api.example.com/products/:category/:productId', cacheControl: 'public, max-age=86400' }
 ```
 
 #### Combining parameters and wildcards
 
 ```js
-{ routeToMatch: 'app.example.com/:tenant/dashboard/*', cacheControl: 'private, max-age=60' }
+{ routeToMatch: 'https://app.example.com/:tenant/dashboard/*', cacheControl: 'private, max-age=60' }
 ```
 
-When defining rules, more specific paths take precedence over more general ones. For example, if you have rules for both `api.example.com/*` and `api.example.com/v1/cache/*`, requests to `api.example.com/v1/cache/data` will use the `api.example.com/v1/cache/*` rule.
+When defining rules, more specific paths take precedence over more general ones. For example, if you have rules for both `https://api.example.com/*` and `https://api.example.com/v1/cache/*`, requests to `https://api.example.com/v1/cache/data` will use the `https://api.example.com/v1/cache/*` rule.
 
 ## Cache Tags
 
@@ -173,12 +175,12 @@ import { createInterceptor } from 'make-cacheable-interceptor'
 
 const interceptor = createInterceptor([
   {
-    routeToMatch: 'api.example.com/users/:userId',
+    routeToMatch: 'https://api.example.com/users/:userId',
     cacheControl: 'private, max-age=3600',
     cacheTags: "'user-' + .params.userId, 'type-user'"
   },
   {
-    routeToMatch: 'api.example.com/products',
+    routeToMatch: 'http://api.example.com/products',
     cacheControl: 'public, max-age=3600',
     cacheTags: ".querystring.category, 'products'"
   }
@@ -249,7 +251,7 @@ This will use the `variant` query parameter if present, or fall back to `'defaul
 
 ```js
 {
-  routeToMatch: 'cdn.example.com/static/*',
+  routeToMatch: 'https://cdn.example.com/static/*',
   cacheControl: 'public, max-age=86400',
   cacheTags: "'static', 'cdn'"
 }
@@ -261,7 +263,7 @@ This will add `x-cache-tags: static,cdn` to all matching responses (or your cust
 
 ```js
 {
-  routeToMatch: 'api.example.com/users/:userId',
+  routeToMatch: 'https://api.example.com/users/:userId',
   cacheControl: 'private, max-age=3600',
   cacheTags: "'user-' + .params.userId, 'type-user'"
 }
@@ -273,7 +275,7 @@ For `/users/123`, this adds `x-cache-tags: user-123,type-user` (or your custom h
 
 ```js
 {
-  routeToMatch: 'api.example.com/products',
+  routeToMatch: 'http://api.example.com/products',
   cacheControl: 'public, max-age=3600',
   cacheTags: ".querystring.category, 'products'"
 }
@@ -285,7 +287,7 @@ For `/products?category=electronics`, this adds `x-cache-tags: electronics,produ
 
 ```js
 {
-  routeToMatch: 'api.example.com/:version/categories/:categoryId/products/:productId',
+  routeToMatch: 'https://api.example.com/:version/categories/:categoryId/products/:productId',
   cacheControl: 'public, max-age=3600',
   cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
 }
@@ -304,7 +306,7 @@ Invalid expressions will cause an error when creating the interceptor:
 // This will throw an error
 createInterceptor([
   {
-    routeToMatch: 'api.example.com/invalid-test',
+    routeToMatch: 'https://api.example.com/invalid-test',
     cacheControl: 'public, max-age=3600',
     cacheTags: 'invalid[expression' // Syntax error
   }
@@ -326,7 +328,7 @@ You can customize the name of the header used for cache tags by setting the `cac
 const interceptor = createInterceptor(
   [
     {
-      routeToMatch: 'api.example.com/products/:id',
+      routeToMatch: 'https://api.example.com/products/:id',
       cacheControl: 'public, max-age=3600',
       cacheTags: "'product-' + .params.id, 'category-all'"
     }
@@ -364,6 +366,7 @@ This is particularly useful when integrating with different CDN providers or cac
 - Cache tag expressions are compiled using the FGH library
 - Each route must include both the origin (host:port) and path
 - The origin is matched against the request's host header, origin URL, or hostname/port
+- You can optionally include the protocol (http:// or https://) in route definitions for clarity
 
 ## License
 
