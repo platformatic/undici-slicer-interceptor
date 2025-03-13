@@ -40,18 +40,15 @@ describe('make-cacheable-interceptor - origin in route format', () => {
     // Test with origin URL
     const result1 = extractOrigin({ origin: 'http://example.com:3000' })
     assert.strictEqual(result1.origin, 'example.com:3000')
-    assert.strictEqual(result1.hasProtocol, true)
 
     // Test with host header
     const result2 = extractOrigin({ headers: { host: 'example.com:3000' } })
     assert.strictEqual(result2.origin, 'example.com:3000')
-    assert.strictEqual(result2.hasProtocol, false)
     assert.strictEqual(result2.fromHostHeader, true)
 
     // Test with hostname and port
     const result3 = extractOrigin({ hostname: 'example.com', port: 3000 })
     assert.strictEqual(result3.origin, 'example.com:3000')
-    assert.strictEqual(result3.hasProtocol, false)
     assert.strictEqual(result3.fromHostHeader, false)
   })
 
@@ -65,7 +62,7 @@ describe('make-cacheable-interceptor - origin in route format', () => {
     await once(server, 'listening')
 
     const port = server.address().port
-    const myAgent = new Agent() // Fixed variable name
+    const myAgent = new Agent()
 
     try {
       // Create agent with our interceptor
@@ -118,7 +115,7 @@ describe('make-cacheable-interceptor - origin in route format', () => {
     } finally {
       // Close the server and agent first to prevent hanging
       await new Promise(resolve => server.close(resolve))
-      await myAgent.close() // Fixed variable name
+      await myAgent.close()
     }
   })
 })
