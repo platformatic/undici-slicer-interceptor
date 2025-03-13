@@ -16,42 +16,39 @@ describe('make-cacheable-interceptor - origin based routing', () => {
     await once(server, 'listening')
 
     const port = server.address().port
-    const serverUrl = `http://localhost:${port}`
-
-    // Create agent with our interceptor
-    const agent = new Agent()
-    const interceptor = createInterceptor([
-      { routeToMatch: '/api/*', cacheControl: 'public, max-age=86400' },
-      { routeToMatch: '/static/*', cacheControl: 'public, max-age=3600' }
-    ])
-
-    const composedAgent = agent.compose(interceptor)
+    const hostname = `localhost:${port}`
 
     try {
-      // Make request to the first path
+      // Create agent with our interceptor with origin in route
+      const agent = new Agent()
+      const interceptor = createInterceptor([
+        { routeToMatch: `${hostname}/api/*`, cacheControl: 'public, max-age=86400' },
+        { routeToMatch: `${hostname}/static/*`, cacheControl: 'public, max-age=3600' }
+      ])
+
+      const composedAgent = agent.compose(interceptor)
+
+      // Test API route
       const res1 = await composedAgent.request({
         method: 'GET',
-        origin: serverUrl,
+        origin: `http://localhost:${port}`,
         path: '/api/data'
       })
 
       assert.strictEqual(res1.headers['cache-control'], 'public, max-age=86400')
-      await res1.body.text() // Use text() instead of dump() to ensure the stream is fully consumed
+      await res1.body.text()
       
-      // Make request to the second path
+      // Test static route
       const res2 = await composedAgent.request({
         method: 'GET',
-        origin: serverUrl,
+        origin: `http://localhost:${port}`,
         path: '/static/image.jpg'
       })
 
       assert.strictEqual(res2.headers['cache-control'], 'public, max-age=3600')
       await res2.body.text()
-      
     } finally {
-      // Always close the agent and server
-      await agent.close()
-      await new Promise(resolve => server.close(resolve))
+      await server.close()
     }
   })
 })

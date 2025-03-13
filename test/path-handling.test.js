@@ -16,12 +16,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -51,12 +52,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -85,12 +87,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -120,12 +123,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor with semicolon delimiter option
       const agent = new Agent()
       const interceptor = createInterceptor(
-        [{ routeToMatch: '/api/*', cacheControl: 'no-store' }],
+        [{ routeToMatch: `${hostname}/api/*`, cacheControl: 'no-store' }],
         { useSemicolonDelimiter: true }
       )
 
@@ -156,15 +160,16 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using more complex patterns
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/static/img/*', cacheControl: 'public, max-age=604800' }, // 1 week for images
-        { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' }, // 1 day for other static
-        { routeToMatch: '/api/v1/cache/*', cacheControl: 'public, max-age=3600' }, // cacheable API
-        { routeToMatch: '/api/*', cacheControl: 'no-store' } // most API calls
+        { routeToMatch: `${hostname}/static/img/*`, cacheControl: 'public, max-age=604800' }, // 1 week for images
+        { routeToMatch: `${hostname}/static/*`, cacheControl: 'public, max-age=86400' }, // 1 day for other static
+        { routeToMatch: `${hostname}/api/v1/cache/*`, cacheControl: 'public, max-age=3600' }, // cacheable API
+        { routeToMatch: `${hostname}/api/*`, cacheControl: 'no-store' } // most API calls
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -213,6 +218,7 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
@@ -233,7 +239,7 @@ describe('make-cacheable-interceptor - path handling', () => {
 
       // Create an interceptor with non-matching routes
       const nonMatchingInterceptor = createInterceptor([
-        { routeToMatch: '/nonexistent', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/nonexistent`, cacheControl: 'public, max-age=86400' }
       ])
       const nonMatchingAgent = agent.compose(nonMatchingInterceptor)
 

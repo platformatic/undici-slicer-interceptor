@@ -16,13 +16,14 @@ describe('make-cacheable-interceptor', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/static/*', cacheControl: 'public, max-age=86400' },
-        { routeToMatch: '/api/*', cacheControl: 'no-store' }
+        { routeToMatch: `${hostname}/static/*`, cacheControl: 'public, max-age=86400' },
+        { routeToMatch: `${hostname}/api/*`, cacheControl: 'no-store' }
       ])
 
       const composedAgent = agent.compose(interceptor)

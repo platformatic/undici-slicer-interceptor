@@ -16,17 +16,18 @@ describe('make-cacheable-interceptor - handler binding', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
-      // Make a request with GET method to trigger cache headers
+      // Test to ensure all handler methods are correctly bound
       const res = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
@@ -34,7 +35,7 @@ describe('make-cacheable-interceptor - handler binding', () => {
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      await res.body.text()
+      await res.body.dump()
     } finally {
       server.close()
     }
