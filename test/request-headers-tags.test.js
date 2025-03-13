@@ -155,7 +155,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
         {
           routeToMatch: `${hostname}/api/case-insensitive`,
           cacheControl: 'public, max-age=3600',
-          cacheTags: ".headers[\"x-tenant-id\"]"
+          cacheTags: '.headers["x-tenant-id"]'
         }
       ])
 

@@ -23,7 +23,7 @@ describe('make-cacheable-interceptor - per-origin matching', () => {
 
     // Create agent with our interceptor - note origin-prefixed routes
     const agent = new Agent()
-    
+
     try {
       const interceptor = createInterceptor([
         {

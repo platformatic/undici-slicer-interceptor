@@ -37,7 +37,7 @@ describe('make-cacheable-interceptor - origin based routing', () => {
 
       assert.strictEqual(res1.headers['cache-control'], 'public, max-age=86400')
       await res1.body.text()
-      
+
       // Test static route
       const res2 = await composedAgent.request({
         method: 'GET',

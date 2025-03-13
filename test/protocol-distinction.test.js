@@ -23,7 +23,7 @@ describe('make-cacheable-interceptor - protocol distinction support', () => {
       // Create agent with interceptor that uses both protocol and non-protocol routes
       const interceptor = createInterceptor([
         {
-          routeToMatch: `http://example.com/static/images/*`,
+          routeToMatch: 'http://example.com/static/images/*',
           cacheControl: 'public, max-age=3600'
         },
         {

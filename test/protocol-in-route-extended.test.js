@@ -50,7 +50,7 @@ describe('make-cacheable-interceptor - protocol in route extended', () => {
       })
 
       // Since we're using example.com in the Host header, it should match our rule
-      assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600', 
+      assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600',
         'Should match route with http:// protocol')
       await res.body.text()
     } finally {

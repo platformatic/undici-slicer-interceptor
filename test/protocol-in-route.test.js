@@ -4,7 +4,7 @@ import { Agent } from 'undici'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createInterceptor } from '../index.js'
-import { parseRouteWithOrigin, extractOrigin } from '../lib/router.js'
+import { parseRouteWithOrigin } from '../lib/router.js'
 
 describe('make-cacheable-interceptor - protocol in route', () => {
   test('should correctly parse route with protocol', () => {

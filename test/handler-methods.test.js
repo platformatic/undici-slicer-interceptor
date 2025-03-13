@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import { Agent } from 'undici'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
-import { Readable } from 'node:stream'
+// import { Readable } from 'node:stream'
 import { createInterceptor } from '../index.js'
 
 describe('make-cacheable-interceptor - handler methods', () => {
@@ -42,7 +42,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
 
     try {
       // Create agent with our interceptor
-      const agent = new Agent()
+      // const agent = new Agent()
       const interceptor = createInterceptor([
         { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
@@ -50,7 +50,7 @@ describe('make-cacheable-interceptor - handler methods', () => {
       // Manually execute the interceptor function
       const dispatch = (options, handlerParam) => {
         assert.deepStrictEqual(options, { path: '/', method: 'GET', origin: serverUrl })
-        
+
         // Verify all methods are passed through
         assert.strictEqual(typeof handlerParam.onConnect, 'function')
         assert.strictEqual(typeof handlerParam.onError, 'function')
@@ -58,13 +58,13 @@ describe('make-cacheable-interceptor - handler methods', () => {
         assert.strictEqual(typeof handlerParam.onData, 'function')
         assert.strictEqual(typeof handlerParam.onComplete, 'function')
         assert.strictEqual(typeof handlerParam.onBodySent, 'function')
-        
+
         return { statusCode: 200 }
       }
-      
+
       const dispatchFn = interceptor(dispatch)
       const result = dispatchFn({ path: '/', method: 'GET', origin: serverUrl }, handler)
-      
+
       assert.strictEqual(result.statusCode, 200)
     } finally {
       server.close()
@@ -100,13 +100,13 @@ describe('make-cacheable-interceptor - handler methods', () => {
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      
+
       // Consume body as a stream to test data handling
       const chunks = []
       for await (const chunk of res.body) {
         chunks.push(chunk)
       }
-      
+
       // Verify data was correctly streamed
       const body = Buffer.concat(chunks).toString()
       assert.strictEqual(body, 'hello world')

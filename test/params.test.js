@@ -50,7 +50,7 @@ describe('make-cacheable-interceptor - route params', () => {
     }
 
     const interceptor = createInterceptor([rule])
-    
+
     // Successful creation means parameters are supported
     assert.ok(interceptor)
   })

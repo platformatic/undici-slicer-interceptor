@@ -66,7 +66,7 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * setGlobalDispatcher(composedAgent)
  * ```
  */
-export function createInterceptor(rules, options = {}) {
+export function createInterceptor (rules, options = {}) {
   // Default option for cache tags header name
   const cacheTagsHeader = options.cacheTagsHeader || 'x-cache-tags'
 
