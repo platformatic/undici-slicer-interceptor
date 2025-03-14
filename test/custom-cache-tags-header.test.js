@@ -25,7 +25,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
         [
           {
             routeToMatch: `${hostname}/products/:id`,
-            cacheControl: 'public, max-age=3600',
+            headers: { 'cache-control': 'public, max-age=3600' },
             cacheTags: "'product-' + .params.id, 'category-all'"
           }
         ],
@@ -72,7 +72,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
         [
           {
             routeToMatch: `${hostname}/respect-existing`,
-            cacheControl: 'public, max-age=3600',
+            headers: { 'cache-control': 'public, max-age=3600' },
             cacheTags: "'should-not-appear'"
           }
         ],
@@ -116,7 +116,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/default-header`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: "'default-tag'"
         }
       ])

@@ -28,11 +28,11 @@ describe('make-cacheable-interceptor - per-origin matching', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname1}/api/*`,
-          cacheControl: 'public, max-age=86400'
+          headers: { 'cache-control': 'public, max-age=86400' }
         },
         {
           routeToMatch: `${hostname2}/api/*`,
-          cacheControl: 'no-store'
+          headers: { 'cache-control': 'no-store' }
         }
       ])
 

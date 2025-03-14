@@ -9,10 +9,10 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * those headers don't already exist. It can also add cache tags headers based on
  * jq-style rules implemented via fgh.
  *
- * @param {Array<{routeToMatch: string, headers?: Object, cacheControl?: string, cacheTags?: string}>} rules - Array of rules for headers
+ * @param {Array<{routeToMatch: string, headers?: Object, cacheTags?: string}>} rules - Array of rules for headers
  * @param {string} rules[].routeToMatch - Origin and path pattern to match in format "hostname:port/path" or "hostname/path"
  * @param {Object} [rules[].headers] - Object containing headers to set (e.g., {"cache-control": "public, max-age=3600", "x-custom-header": "value"})
- * @param {string} [rules[].cacheControl] - Cache-Control header value to set for matching paths (for backward compatibility)
+
  * @param {string} [rules[].cacheTags] - JQ-style expression via fgh to generate cache tags from params, querystring, and request headers.
  * For multiple values, use comma-separated syntax like ".params.id, 'static'" or ".,." for multiple outputs.
  * @param {Object} [options] - Options for the find-my-way router
@@ -42,7 +42,7 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *     },
  *     {
  *       routeToMatch: 'localhost:3042/users/:id',
- *       cacheControl: 'public, max-age=3600', // For backward compatibility
+ *       headers: { 'cache-control': 'public, max-age=3600' },
  *       cacheTags: "'user-' + .params.id"
  *     },
  *     {

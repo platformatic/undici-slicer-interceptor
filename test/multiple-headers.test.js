@@ -22,16 +22,16 @@ describe('make-cacheable-interceptor - multiple headers', () => {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { 
-          routeToMatch: `${hostname}/static/*`, 
+        {
+          routeToMatch: `${hostname}/static/*`,
           headers: {
             'cache-control': 'public, max-age=86400',
             'x-custom-header': 'static-content',
             'content-type': 'application/json'
           }
         },
-        { 
-          routeToMatch: `${hostname}/api/*`, 
+        {
+          routeToMatch: `${hostname}/api/*`,
           headers: {
             'cache-control': 'no-store',
             'x-api-version': '1.0'
@@ -39,7 +39,9 @@ describe('make-cacheable-interceptor - multiple headers', () => {
         },
         {
           routeToMatch: `${hostname}/backward-compat`,
-          cacheControl: 'private, max-age=3600'
+          headers: {
+            'cache-control': 'private, max-age=3600'
+          }
         }
       ])
 
@@ -93,8 +95,8 @@ describe('make-cacheable-interceptor - multiple headers', () => {
       const hostname2 = `localhost:${server2.address().port}`
 
       const interceptor2 = createInterceptor([
-        { 
-          routeToMatch: `${hostname2}/*`, 
+        {
+          routeToMatch: `${hostname2}/*`,
           headers: {
             'cache-control': 'public, max-age=86400',
             'x-custom-header': 'test-value',
@@ -119,55 +121,8 @@ describe('make-cacheable-interceptor - multiple headers', () => {
       // But it should not override content-type since it already exists in the response
       assert.strictEqual(existingHeadersRes.headers['content-type'], 'application/xml')
       await existingHeadersRes.body.dump()
-      
+
       server2.close()
-
-    } finally {
-      server.close()
-    }
-  })
-
-  test('should prioritize cacheControl over headers.cache-control when both are provided', async () => {
-    // Setup test server
-    const server = createServer((req, res) => {
-      res.end('hello world')
-    })
-
-    server.listen(0)
-    await once(server, 'listening')
-
-    const serverUrl = `http://localhost:${server.address().port}`
-    const hostname = `localhost:${server.address().port}`
-
-    try {
-      // Create agent with our interceptor
-      const agent = new Agent()
-      const interceptor = createInterceptor([
-        { 
-          routeToMatch: `${hostname}/mixed`, 
-          headers: {
-            'cache-control': 'public, max-age=86400',
-            'x-custom-header': 'test'
-          },
-          cacheControl: 'private, max-age=60' // This should take precedence
-        }
-      ])
-
-      const composedAgent = agent.compose(interceptor)
-      setGlobalDispatcher(composedAgent)
-
-      // Test route with both cacheControl and headers.cache-control
-      const res = await request({
-        method: 'GET',
-        origin: serverUrl,
-        path: '/mixed'
-      })
-
-      // cacheControl should take precedence over headers.cache-control
-      assert.strictEqual(res.headers['cache-control'], 'private, max-age=60')
-      // Other headers should still be set
-      assert.strictEqual(res.headers['x-custom-header'], 'test')
-      await res.body.dump()
     } finally {
       server.close()
     }

@@ -24,7 +24,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/static/*`,
-          cacheControl: 'public, max-age=86400',
+          headers: { 'cache-control': 'public, max-age=86400' },
           cacheTags: "'static', 'cdn'"
         }
       ])
@@ -64,7 +64,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/users/:userId`,
-          cacheControl: 'private, max-age=3600',
+          headers: { 'cache-control': 'private, max-age=3600' },
           cacheTags: "'user-' + .params.userId, 'type-user'"
         }
       ])
@@ -104,7 +104,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/products`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: ".querystring.category, 'products'"
         }
       ])
@@ -144,7 +144,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/:version/categories/:categoryId/products/:productId`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
         }
       ])
@@ -188,7 +188,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       createInterceptor([
         {
           routeToMatch: 'example.com/invalid-test',
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: 'invalid[expression' // This should cause an error during compilation
         }
       ])
@@ -213,7 +213,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/no-tags`,
-          cacheControl: 'public, max-age=3600'
+          headers: { 'cache-control': 'public, max-age=3600' }
           // No cacheTags property
         }
       ])
@@ -254,7 +254,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/respect-existing`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: "'should-not-appear'"
         }
       ])

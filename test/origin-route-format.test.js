@@ -67,11 +67,11 @@ describe('make-cacheable-interceptor - origin in route format', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `localhost:${port}/api/*`,
-          cacheControl: 'public, max-age=86400'
+          headers: { 'cache-control': 'public, max-age=86400' }
         },
         {
           routeToMatch: 'other.example.com/api/*',
-          cacheControl: 'no-store'
+          headers: { 'cache-control': 'no-store' }
         }
       ])
 

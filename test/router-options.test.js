@@ -23,7 +23,7 @@ describe('make-cacheable-interceptor - router options', () => {
       const agent = new Agent()
       const interceptor = createInterceptor(
         [
-          { routeToMatch: `${hostname}/api/users`, cacheControl: 'public, max-age=86400' }
+          { routeToMatch: `${hostname}/api/users`, headers: { 'cache-control': 'public, max-age=86400' } }
         ],
         {
           ignoreTrailingSlash: true
@@ -74,7 +74,7 @@ describe('make-cacheable-interceptor - router options', () => {
       const agent = new Agent()
       const interceptor = createInterceptor(
         [
-          { routeToMatch: `${hostname}/api/Users`, cacheControl: 'public, max-age=86400' }
+          { routeToMatch: `${hostname}/api/Users`, headers: { 'cache-control': 'public, max-age=86400' } }
         ],
         {
           caseSensitive: false
@@ -125,7 +125,7 @@ describe('make-cacheable-interceptor - router options', () => {
       const agent = new Agent()
       const interceptor = createInterceptor(
         [
-          { routeToMatch: `${hostname}/api/data`, cacheControl: 'public, max-age=86400' }
+          { routeToMatch: `${hostname}/api/data`, headers: { 'cache-control': 'public, max-age=86400' } }
         ],
         {
           ignoreDuplicateSlashes: true
@@ -176,7 +176,7 @@ describe('make-cacheable-interceptor - router options', () => {
       const agent = new Agent()
       const interceptor = createInterceptor(
         [
-          { routeToMatch: `${hostname}/api/data`, cacheControl: 'public, max-age=86400' }
+          { routeToMatch: `${hostname}/api/data`, headers: { 'cache-control': 'public, max-age=86400' } }
         ],
         {
           ignoreTrailingSlash: true,

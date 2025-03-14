@@ -23,7 +23,7 @@ describe('make-cacheable-interceptor - header handling', () => {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -60,7 +60,7 @@ describe('make-cacheable-interceptor - header handling', () => {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -98,7 +98,7 @@ describe('make-cacheable-interceptor - header handling', () => {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
       ])
 
       const composedAgent = agent.compose(interceptor)

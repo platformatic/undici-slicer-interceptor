@@ -12,7 +12,7 @@ npm install make-cacheable-interceptor
 
 - Automatically adds headers to HTTP responses based on URL patterns
 - Supports defining multiple headers in a single rule
-- Supports cache-control headers for backward compatibility
+
 - Origin-specific routes (host:port + path patterns)
 - Adds cache tag headers for fine-grained cache invalidation strategies
 - Uses find-my-way for efficient URL routing and matching
@@ -42,10 +42,11 @@ const interceptor = createInterceptor(
       cacheTags: "'static', 'images'" 
     }, // 1 week for images with custom headers
     
-    // Using the legacy cacheControl parameter (for backward compatibility)
     { 
       routeToMatch: 'http://example.com/static/*', 
-      cacheControl: 'public, max-age=86400',
+      headers: {
+        'cache-control': 'public, max-age=86400'
+      },
       cacheTags: "'static', 'content'"
     }, // 1 day for other static content
     
@@ -62,17 +63,23 @@ const interceptor = createInterceptor(
     // Rest of your rules...
     { 
       routeToMatch: 'http://api.example.com/v1/products/:productId', 
-      cacheControl: 'public, max-age=1800',
+      headers: {
+        'cache-control': 'public, max-age=1800'
+      },
       cacheTags: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" 
     }, // 30 minutes for product data with tags based on product ID and variant
     { 
       routeToMatch: 'https://api.example.com/v1/cache/*', 
-      cacheControl: 'public, max-age=3600',
+      headers: {
+        'cache-control': 'public, max-age=3600'
+      },
       cacheTags: "'api', 'v1', 'cacheable'"
     }, // 1 hour for cacheable API
     { 
       routeToMatch: 'https://api.example.com/*', 
-      cacheControl: 'no-store',
+      headers: {
+        'cache-control': 'no-store'
+      },
       cacheTags: "'api'"
     } // No caching for other API endpoints
   ],
@@ -92,7 +99,7 @@ setGlobalDispatcher(composedAgent)
 
 ## Setting Headers
 
-The interceptor supports two ways to define headers: using the `headers` object or the `cacheControl` parameter (for backward compatibility).
+The interceptor uses the `headers` object to define headers to be applied to responses.
 
 ### Using the Headers Object
 
@@ -121,50 +128,14 @@ content-type: application/json
 x-custom-header: custom-value
 ```
 
-### Using the CacheControl Parameter (Legacy)
 
-For backward compatibility, you can still use the `cacheControl` parameter to set just the cache-control header:
-
-```js
-const interceptor = createInterceptor([
-  {
-    routeToMatch: 'https://api.example.com/products',
-    cacheControl: 'public, max-age=3600'
-  }
-])
-```
-
-### Combined Approach
-
-You can also use both `headers` and `cacheControl` in the same rule. In this case, the `cacheControl` value takes precedence over any cache-control header defined in the `headers` object:
-
-```js
-const interceptor = createInterceptor([
-  {
-    routeToMatch: 'https://api.example.com/products',
-    headers: {
-      'cache-control': 'public, max-age=86400', // This will be overridden
-      'x-api-version': '1.0'
-    },
-    cacheControl: 'private, max-age=3600' // This takes precedence
-  }
-])
-```
-
-With this configuration, the resulting headers would be:
-
-```
-cache-control: private, max-age=3600
-x-api-version: 1.0
-```
 
 ### Header Precedence
 
 The interceptor never overrides existing headers in responses. If a response already has a header, it will not be changed or replaced, regardless of the rules.
 
 1. Existing headers in the response (highest precedence)
-2. Headers set by the `cacheControl` parameter
-3. Headers set by the `headers` object
+2. Headers set by the `headers` object
 
 This allows you to apply default headers while still allowing the server to have the final say when it specifically sets headers.
 
@@ -231,26 +202,26 @@ The path part of the route uses [find-my-way](https://github.com/delvedor/find-m
 #### Simple paths
 
 ```js
-{ routeToMatch: 'http://api.example.com/users', cacheControl: 'no-store' }
+{ routeToMatch: 'http://api.example.com/users', headers: { 'cache-control': 'no-store' } }
 ```
 
 #### Wildcard paths
 
 ```js
-{ routeToMatch: 'https://cdn.example.com/static/*', cacheControl: 'public, max-age=86400' }
+{ routeToMatch: 'https://cdn.example.com/static/*', headers: { 'cache-control': 'public, max-age=86400' } }
 ```
 
 #### Route parameters
 
 ```js
-{ routeToMatch: 'http://api.example.com/users/:userId', cacheControl: 'private, max-age=3600' }
-{ routeToMatch: 'https://api.example.com/products/:category/:productId', cacheControl: 'public, max-age=86400' }
+{ routeToMatch: 'http://api.example.com/users/:userId', headers: { 'cache-control': 'private, max-age=3600' } }
+{ routeToMatch: 'https://api.example.com/products/:category/:productId', headers: { 'cache-control': 'public, max-age=86400' } }
 ```
 
 #### Combining parameters and wildcards
 
 ```js
-{ routeToMatch: 'https://app.example.com/:tenant/dashboard/*', cacheControl: 'private, max-age=60' }
+{ routeToMatch: 'https://app.example.com/:tenant/dashboard/*', headers: { 'cache-control': 'private, max-age=60' } }
 ```
 
 When defining rules, more specific paths take precedence over more general ones. For example, if you have rules for both `https://api.example.com/*` and `https://api.example.com/v1/cache/*`, requests to `https://api.example.com/v1/cache/data` will use the `https://api.example.com/v1/cache/*` rule.
@@ -269,12 +240,12 @@ import { createInterceptor } from 'make-cacheable-interceptor'
 const interceptor = createInterceptor([
   {
     routeToMatch: 'https://api.example.com/users/:userId',
-    cacheControl: 'private, max-age=3600',
+    headers: { 'cache-control': 'private, max-age=3600' },
     cacheTags: "'user-' + .params.userId, 'type-user'"
   },
   {
     routeToMatch: 'http://api.example.com/products',
-    cacheControl: 'public, max-age=3600',
+    headers: { 'cache-control': 'public, max-age=3600' },
     cacheTags: ".querystring.category, 'products'"
   }
 ])
@@ -345,7 +316,7 @@ This will use the `variant` query parameter if present, or fall back to `'defaul
 ```js
 {
   routeToMatch: 'https://cdn.example.com/static/*',
-  cacheControl: 'public, max-age=86400',
+  headers: { 'cache-control': 'public, max-age=86400' },
   cacheTags: "'static', 'cdn'"
 }
 ```
@@ -357,7 +328,7 @@ This will add `x-cache-tags: static,cdn` to all matching responses (or your cust
 ```js
 {
   routeToMatch: 'https://api.example.com/users/:userId',
-  cacheControl: 'private, max-age=3600',
+  headers: { 'cache-control': 'private, max-age=3600' },
   cacheTags: "'user-' + .params.userId, 'type-user'"
 }
 ```
@@ -369,7 +340,7 @@ For `/users/123`, this adds `x-cache-tags: user-123,type-user` (or your custom h
 ```js
 {
   routeToMatch: 'http://api.example.com/products',
-  cacheControl: 'public, max-age=3600',
+  headers: { 'cache-control': 'public, max-age=3600' },
   cacheTags: ".querystring.category, 'products'"
 }
 ```
@@ -381,7 +352,7 @@ For `/products?category=electronics`, this adds `x-cache-tags: electronics,produ
 ```js
 {
   routeToMatch: 'https://api.example.com/:version/categories/:categoryId/products/:productId',
-  cacheControl: 'public, max-age=3600',
+  headers: { 'cache-control': 'public, max-age=3600' },
   cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
 }
 ```
@@ -400,7 +371,7 @@ Invalid expressions will cause an error when creating the interceptor:
 createInterceptor([
   {
     routeToMatch: 'https://api.example.com/invalid-test',
-    cacheControl: 'public, max-age=3600',
+    headers: { 'cache-control': 'public, max-age=3600' },
     cacheTags: 'invalid[expression' // Syntax error
   }
 ])
@@ -422,7 +393,7 @@ const interceptor = createInterceptor(
   [
     {
       routeToMatch: 'https://api.example.com/products/:id',
-      cacheControl: 'public, max-age=3600',
+      headers: { 'cache-control': 'public, max-age=3600' },
       cacheTags: "'product-' + .params.id, 'category-all'"
     }
   ],
@@ -453,7 +424,7 @@ This is particularly useful when integrating with different CDN providers or cac
 
 - The interceptor only adds headers if they don't already exist in the response
 - Headers are only added to GET and HEAD requests
-- `cacheControl` takes precedence over `headers['cache-control']` if both are defined
+
 - The interceptor respects the find-my-way pattern syntax
 - You must explicitly add wildcards (`*`) in your patterns when needed
 - Cache tag expressions are compiled using the FGH library

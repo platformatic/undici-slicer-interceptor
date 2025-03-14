@@ -24,7 +24,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/auth`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
         }
       ])
@@ -67,7 +67,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/multi-header`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: ".headers[\"x-tenant-id\"], .headers[\"x-user-id\"], 'api'"
         }
       ])
@@ -111,7 +111,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/users/:userId/products`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: ".headers[\"x-tenant-id\"], 'user-' + .params.userId, .querystring.category"
         }
       ])
@@ -154,7 +154,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/case-insensitive`,
-          cacheControl: 'public, max-age=3600',
+          headers: { 'cache-control': 'public, max-age=3600' },
           cacheTags: '.headers["x-tenant-id"]'
         }
       ])

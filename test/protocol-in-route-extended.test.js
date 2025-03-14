@@ -33,7 +33,7 @@ describe('make-cacheable-interceptor - protocol in route extended', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: 'http://example.com/static/images/*',
-          cacheControl: 'public, max-age=3600'
+          headers: { 'cache-control': 'public, max-age=3600' }
         }
       ])
 

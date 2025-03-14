@@ -22,10 +22,10 @@ describe('make-cacheable-interceptor - advanced tests', () => {
       // Create agent with our interceptor using more complex patterns
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/static/img/*`, cacheControl: 'public, max-age=604800' }, // 1 week for images
-        { routeToMatch: `${hostname}/static/*`, cacheControl: 'public, max-age=86400' }, // 1 day for other static
-        { routeToMatch: `${hostname}/api/v1/cache/*`, cacheControl: 'public, max-age=3600' }, // cacheable API
-        { routeToMatch: `${hostname}/api/*`, cacheControl: 'no-store' } // most API calls
+        { routeToMatch: `${hostname}/static/img/*`, headers: { 'cache-control': 'public, max-age=604800' } }, // 1 week for images
+        { routeToMatch: `${hostname}/static/*`, headers: { 'cache-control': 'public, max-age=86400' } }, // 1 day for other static
+        { routeToMatch: `${hostname}/api/v1/cache/*`, headers: { 'cache-control': 'public, max-age=3600' } }, // cacheable API
+        { routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'no-store' } } // most API calls
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -72,14 +72,14 @@ describe('make-cacheable-interceptor - advanced tests', () => {
           { routeToMatch: 'example.com/api' } // Missing cacheControl
         ])
       },
-      { message: 'Each rule must have either a headers object or a cacheControl string' }
+      { message: 'Each rule must have a headers object' }
     )
 
     // Invalid route format without origin should throw
     assert.throws(
       () => {
         createInterceptor([
-          { routeToMatch: '/api', cacheControl: 'no-store' }
+          { routeToMatch: '/api', headers: { 'cache-control': 'no-store' } }
         ])
       },
       /Origin must be specified at the beginning of the route/
