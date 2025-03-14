@@ -23,6 +23,8 @@ import abstractLogging from 'abstract-logging'
  * @param {boolean} [options.caseSensitive=true] - Use case sensitive routing
  * @param {boolean} [options.useSemicolonDelimiter=false] - Use semicolon instead of ampersand as query param delimiter
  * @param {Object} [options.logger=abstract-logging] - Logger instance (pino compatible)
+ * The logger can be any Pino-compatible logger. It will log interceptor operations
+ * such as creation, rule validation, route matching, and header application.
  * @returns {Function} - An undici interceptor function that can be composed with a dispatcher
  *
  * @example
@@ -95,7 +97,7 @@ export function createInterceptor (options = {}) {
   const sortedRules = sortRulesBySpecificity(rules, logger)
 
   // Create and configure router
-  const router = createRouter(sortedRules, routeOptions)
+  const router = createRouter(sortedRules, routeOptions, logger)
 
   // Create and return the interceptor function
   return createInterceptorFunction(router, logger)
