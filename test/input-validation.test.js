@@ -25,7 +25,7 @@ describe('make-cacheable-interceptor - input validation', () => {
       () => {
         createInterceptor([{ routeToMatch: 'example.com/api' }])
       },
-      { message: 'Each rule must have a cacheControl string' }
+      { message: 'Each rule must have either a headers object or a cacheControl string' }
     )
 
     // Invalid route format - missing origin
@@ -67,7 +67,7 @@ describe('make-cacheable-interceptor - input validation', () => {
           { routeToMatch: 'example.com/path', cacheControl: 123 }
         ])
       },
-      { message: 'Each rule must have a cacheControl string' }
+      { message: 'Each rule must have either a headers object or a cacheControl string' }
     )
 
     // Empty routeToMatch
@@ -87,7 +87,7 @@ describe('make-cacheable-interceptor - input validation', () => {
           { routeToMatch: 'example.com/path', cacheControl: '' }
         ])
       },
-      { message: 'Each rule must have a cacheControl string' }
+      { message: 'Each rule must have either a headers object or a cacheControl string' }
     )
 
     // Valid rules should work fine

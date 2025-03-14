@@ -3,15 +3,16 @@ import { createRouter } from './lib/router.js'
 import { createInterceptorFunction } from './lib/interceptor.js'
 
 /**
- * Creates an undici interceptor that adds cache-control headers based on specified rules.
+ * Creates an undici interceptor that adds headers based on specified rules.
  * The interceptor uses a router to match the request path and applies the corresponding
- * cache-control header to the response, but only for GET and HEAD requests, and only if
- * no cache-control header already exists. It can also add cache tags headers based on
+ * headers to the response, but only for GET and HEAD requests, and only if
+ * those headers don't already exist. It can also add cache tags headers based on
  * jq-style rules implemented via fgh.
  *
- * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: string}>} rules - Array of rules for cache control
+ * @param {Array<{routeToMatch: string, headers?: Object, cacheControl?: string, cacheTags?: string}>} rules - Array of rules for headers
  * @param {string} rules[].routeToMatch - Origin and path pattern to match in format "hostname:port/path" or "hostname/path"
- * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
+ * @param {Object} [rules[].headers] - Object containing headers to set (e.g., {"cache-control": "public, max-age=3600", "x-custom-header": "value"})
+ * @param {string} [rules[].cacheControl] - Cache-Control header value to set for matching paths (for backward compatibility)
  * @param {string} [rules[].cacheTags] - JQ-style expression via fgh to generate cache tags from params, querystring, and request headers.
  * For multiple values, use comma-separated syntax like ".params.id, 'static'" or ".,." for multiple outputs.
  * @param {Object} [options] - Options for the find-my-way router
@@ -33,22 +34,31 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *   [
  *     {
  *       routeToMatch: 'localhost:3042/static/*',
- *       cacheControl: 'public, max-age=86400',
+ *       headers: {
+ *         'cache-control': 'public, max-age=86400',
+ *         'x-custom-header': 'static-content'
+ *       },
  *       cacheTags: "'static'"
  *     },
  *     {
  *       routeToMatch: 'localhost:3042/users/:id',
- *       cacheControl: 'public, max-age=3600',
+ *       cacheControl: 'public, max-age=3600', // For backward compatibility
  *       cacheTags: "'user-' + .params.id"
  *     },
  *     {
  *       routeToMatch: 'localhost:3042/api/products',
- *       cacheControl: 'public, max-age=3600',
+ *       headers: {
+ *         'cache-control': 'public, max-age=3600',
+ *         'x-api-version': '1.0'
+ *       },
  *       cacheTags: ".querystring.category"
  *     },
  *     {
  *       routeToMatch: 'api.example.com/api/auth',
- *       cacheControl: 'public, max-age=600',
+ *       headers: {
+ *         'cache-control': 'public, max-age=600',
+ *         'x-security-level': 'high'
+ *       },
  *       cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
  *     }
  *   ],
@@ -59,8 +69,8 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *   }
  * )
  *
- * // This will add cache-control headers to GET and HEAD requests
- * // that don't already have a cache-control header, and cache tags
+ * // This will add headers to GET and HEAD requests that don't already
+ * // have those headers, and cache tags
  * // headers based on the provided jq-style expressions
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)

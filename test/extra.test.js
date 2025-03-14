@@ -72,7 +72,7 @@ describe('make-cacheable-interceptor - advanced tests', () => {
           { routeToMatch: 'example.com/api' } // Missing cacheControl
         ])
       },
-      { message: 'Each rule must have a cacheControl string' }
+      { message: 'Each rule must have either a headers object or a cacheControl string' }
     )
 
     // Invalid route format without origin should throw
