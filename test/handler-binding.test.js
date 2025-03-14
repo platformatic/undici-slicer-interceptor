@@ -21,9 +21,12 @@ describe('make-cacheable-interceptor - handler binding', () => {
     try {
       // Create agent with our interceptor
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
-      ])
+      const interceptor = createInterceptor({
+        rules: [{
+          routeToMatch: `${hostname}/`,
+          headers: { 'cache-control': 'public, max-age=86400' }
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

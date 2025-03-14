@@ -30,64 +30,64 @@ import { createInterceptor } from 'make-cacheable-interceptor'
 
 // Create an interceptor with header rules
 const interceptor = createInterceptor(
-  [
-    // Static header values
-    { 
-      routeToMatch: 'http://example.com/static/images/*', 
-      headers: {
-        'cache-control': 'public, max-age=604800',
-        'content-type': 'image/jpeg',
-        'x-custom-header': 'static-image',
-        'x-cache-tags': { fgh: "'static', 'images'" }
-      }
-    }, // 1 week for images with custom headers
-    
-    { 
-      routeToMatch: 'http://example.com/static/*', 
-      headers: {
-        'cache-control': 'public, max-age=86400',
-        'x-cache-tags': { fgh: "'static', 'content'" }
-      }
-    }, // 1 day for other static content
-    
-    // Dynamic header values using FGH
-    { 
-      routeToMatch: 'https://example.com/users/:userId', 
-      headers: {
-        'cache-control': 'private, max-age=3600',
-        'x-user-route': 'true',
-        'x-user-id': { fgh: '.params.userId' },
-        'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
-      }
-    }, // 1 hour for user profiles with user-specific tag
-    
-    // More examples of dynamic headers
-    { 
-      routeToMatch: 'http://api.example.com/v1/products/:productId', 
-      headers: {
-        'cache-control': 'public, max-age=1800',
-        'x-product-id': { fgh: '.params.productId' },
-        'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
-      }
-    }, // 30 minutes for product data with tags based on product ID and variant
-    
-    { 
-      routeToMatch: 'https://api.example.com/v1/cache/*', 
-      headers: {
-        'cache-control': 'public, max-age=3600',
-        'x-cache-tags': { fgh: "'api', 'v1', 'cacheable'" }
-      }
-    }, // 1 hour for cacheable API
-    
-    { 
-      routeToMatch: 'https://api.example.com/*', 
-      headers: {
-        'cache-control': 'no-store',
-        'x-cache-tags': { fgh: "'api'" }
-      }
-    } // No caching for other API endpoints
-  ],
-  { 
+  {
+    rules: [
+      // Static header values
+      { 
+        routeToMatch: 'http://example.com/static/images/*', 
+        headers: {
+          'cache-control': 'public, max-age=604800',
+          'content-type': 'image/jpeg',
+          'x-custom-header': 'static-image',
+          'x-cache-tags': { fgh: "'static', 'images'" }
+        }
+      }, // 1 week for images with custom headers
+      
+      { 
+        routeToMatch: 'http://example.com/static/*', 
+        headers: {
+          'cache-control': 'public, max-age=86400',
+          'x-cache-tags': { fgh: "'static', 'content'" }
+        }
+      }, // 1 day for other static content
+      
+      // Dynamic header values using FGH
+      { 
+        routeToMatch: 'https://example.com/users/:userId', 
+        headers: {
+          'cache-control': 'private, max-age=3600',
+          'x-user-route': 'true',
+          'x-user-id': { fgh: '.params.userId' },
+          'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
+        }
+      }, // 1 hour for user profiles with user-specific tag
+      
+      // More examples of dynamic headers
+      { 
+        routeToMatch: 'http://api.example.com/v1/products/:productId', 
+        headers: {
+          'cache-control': 'public, max-age=1800',
+          'x-product-id': { fgh: '.params.productId' },
+          'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
+        }
+      }, // 30 minutes for product data with tags based on product ID and variant
+      
+      { 
+        routeToMatch: 'https://api.example.com/v1/cache/*', 
+        headers: {
+          'cache-control': 'public, max-age=3600',
+          'x-cache-tags': { fgh: "'api', 'v1', 'cacheable'" }
+        }
+      }, // 1 hour for cacheable API
+      
+      { 
+        routeToMatch: 'https://api.example.com/*', 
+        headers: {
+          'cache-control': 'no-store',
+          'x-cache-tags': { fgh: "'api'" }
+        }
+      } // No caching for other API endpoints
+    ],
     ignoreTrailingSlash: true,
     caseSensitive: false
   }
@@ -110,8 +110,8 @@ The interceptor uses the `headers` object to define headers to be applied to res
 For static header values, simply use strings:
 
 ```js
-const interceptor = createInterceptor([
-  {
+const interceptor = createInterceptor({
+  rules: [{
     routeToMatch: 'https://api.example.com/products',
     headers: {
       'cache-control': 'public, max-age=3600',
@@ -119,8 +119,8 @@ const interceptor = createInterceptor([
       'content-type': 'application/json',
       'x-custom-header': 'custom-value'
     }
-  }
-])
+  }]
+})
 ```
 
 ### Dynamic Header Values with FGH
@@ -128,16 +128,16 @@ const interceptor = createInterceptor([
 For dynamic header values, use an object with an `fgh` property containing an FGH expression:
 
 ```js
-const interceptor = createInterceptor([
-  {
+const interceptor = createInterceptor({
+  rules: [{
     routeToMatch: 'https://api.example.com/users/:userId',
     headers: {
       'cache-control': 'public, max-age=3600',
       'x-user-id': { fgh: '.params.userId' },
       'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
     }
-  }
-])
+  }]
+})
 ```
 
 ### Header Precedence
@@ -160,27 +160,25 @@ The interceptor accepts the following find-my-way options as a second parameter:
 | `maxParamLength` | number | `100` | The maximum length of a parameter |
 | `caseSensitive` | boolean | `true` | When set to `true`, `/api/users` and `/api/Users` will be treated as different routes |
 | `useSemicolonDelimiter` | boolean | `false` | When set to `true`, use semicolon instead of ampersand as query parameter delimiter |
-| `cacheTagsHeader` | string | `'x-cache-tags'` | The name of the header to use for cache tags |
 
 Example with options:
 
 ```js
 const interceptor = createInterceptor(
-  [
-    { 
-      routeToMatch: 'http://api.example.com/users', 
-      headers: { 
-        'cache-control': 'no-store', 
-        'x-api-version': '1.0',
-        'x-cache-tags': { fgh: "'users'" }
-      } 
-    }
-  ],
   {
+    rules: [
+      { 
+        routeToMatch: 'http://api.example.com/users', 
+        headers: { 
+          'cache-control': 'no-store', 
+          'x-api-version': '1.0',
+          'x-cache-tags': { fgh: "'users'" }
+        } 
+      }
+    ],
     ignoreTrailingSlash: true,
     caseSensitive: false,
-    ignoreDuplicateSlashes: true,
-    cacheTagsHeader: 'x-custom-cache-tags' // Use a custom header name for cache tags
+    ignoreDuplicateSlashes: true
   }
 )
 ```
@@ -429,15 +427,15 @@ Invalid FGH expressions will cause an error when creating the interceptor:
 
 ```js
 // This will throw an error
-createInterceptor([
-  {
+createInterceptor({
+  rules: [{
     routeToMatch: 'https://api.example.com/invalid-test',
     headers: { 
       'cache-control': 'public, max-age=3600',
       'x-invalid': { fgh: 'invalid[expression' } // Syntax error
     }
-  }
-])
+  }]
+})
 ```
 
 #### Runtime Errors
@@ -446,27 +444,6 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 1. Log an error to the console
 2. Skip the failed header
 3. Continue with other valid headers
-
-### Custom Cache Tag Header
-
-You can customize the name of the header used for cache tags by setting the `cacheTagsHeader` option:
-
-```js
-const interceptor = createInterceptor(
-  [
-    {
-      routeToMatch: 'https://api.example.com/products/:id',
-      headers: { 
-        'cache-control': 'public, max-age=3600',
-        'x-cache-tags': { fgh: "'product-' + .params.id, 'category-all'" }
-      }
-    }
-  ],
-  {
-    cacheTagsHeader: 'x-purge-tags' // Use this instead of 'x-cache-tags'
-  }
-)
-```
 
 In this case, the expression would automatically target the custom header name.
 

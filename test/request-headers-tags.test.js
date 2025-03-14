@@ -21,15 +21,17 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     try {
       // Create agent with our interceptor using request header-based cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/api/auth`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'auth'" }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/api/auth`,
+            headers: {
+              'cache-control': 'public, max-age=3600',
+              'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'auth'" }
+            }
           }
-        }
-      ])
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -66,15 +68,17 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     try {
       // Create agent with our interceptor using multiple headers in cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/api/multi-header`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], .headers[\"x-user-id\"], 'api'" }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/api/multi-header`,
+            headers: {
+              'cache-control': 'public, max-age=3600',
+              'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], .headers[\"x-user-id\"], 'api'" }
+            }
           }
-        }
-      ])
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -112,15 +116,17 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     try {
       // Create agent with our interceptor using a combination of sources for cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/users/:userId/products`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'user-' + .params.userId, .querystring.category" }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/users/:userId/products`,
+            headers: {
+              'cache-control': 'public, max-age=3600',
+              'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'user-' + .params.userId, .querystring.category" }
+            }
           }
-        }
-      ])
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -157,15 +163,17 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     try {
       // Create agent with our interceptor using lowercase header names in the expression
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/api/case-insensitive`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: '.headers["x-tenant-id"]' }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/api/case-insensitive`,
+            headers: {
+              'cache-control': 'public, max-age=3600',
+              'x-cache-tags': { fgh: '.headers["x-tenant-id"]' }
+            }
           }
-        }
-      ])
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

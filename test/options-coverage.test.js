@@ -21,19 +21,19 @@ describe('make-cacheable-interceptor - options coverage', () => {
     try {
       // Create agent with our interceptor with all options provided
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [
-          { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/`,
+            headers: { 'cache-control': 'public, max-age=86400' },
+          },
         ],
-        {
-          ignoreTrailingSlash: true,
-          ignoreDuplicateSlashes: true,
-          maxParamLength: 200,
-          caseSensitive: false,
-          useSemicolonDelimiter: true,
-          cacheTagsHeader: 'x-custom-cache-tags'
-        }
-      )
+        ignoreTrailingSlash: true,
+        ignoreDuplicateSlashes: true,
+        maxParamLength: 200,
+        caseSensitive: false,
+        useSemicolonDelimiter: true
+      })
 
       const composedAgent = agent.compose(interceptor)
 

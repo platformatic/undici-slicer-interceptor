@@ -64,16 +64,18 @@ describe('make-cacheable-interceptor - origin in route format', () => {
 
     try {
       // Create agent with our interceptor
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `localhost:${port}/api/*`,
-          headers: { 'cache-control': 'public, max-age=86400' }
-        },
-        {
-          routeToMatch: 'other.example.com/api/*',
-          headers: { 'cache-control': 'no-store' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `localhost:${port}/api/*`,
+            headers: { 'cache-control': 'public, max-age=86400' }
+          },
+          {
+            routeToMatch: 'other.example.com/api/*',
+            headers: { 'cache-control': 'no-store' }
+          }
+        ]
+      })
 
       const composedAgent = myAgent.compose(interceptor)
 
