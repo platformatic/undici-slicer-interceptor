@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "abstract-logging": "^2.0.1",
-    "fgh": "^2.1.0",
+    "fgh": "^2.2.0",
     "find-my-way": "^9.2.0"
   }
 }
