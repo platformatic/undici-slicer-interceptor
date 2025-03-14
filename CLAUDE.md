@@ -2,7 +2,7 @@
 
 ## Build & Test Commands
 - Run all tests: `npm test`
-- Run single test: `node  test/fgh.test.ts`
+- Run single test: `node  test/basic.test.ts`
 - Run specific test file: `node --no-warnings --experimental-strip-types --test test/comma-operator.test.ts`
 - Lint: `npm run lint`
 - Fix linting issues: `npm run lint:fix`

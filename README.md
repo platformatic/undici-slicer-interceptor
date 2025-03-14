@@ -1,11 +1,11 @@
-# make-cacheable-interceptor
+# @platformatic/slicer-interceptor
 
 A library that creates an Undici interceptor to automatically add headers to responses based on URL routing patterns using [find-my-way](https://github.com/delvedor/find-my-way).
 
 ## Installation
 
 ```bash
-npm install make-cacheable-interceptor
+npm install @platformatic/slicer-interceptor
 ```
 
 ## Features
@@ -26,7 +26,7 @@ npm install make-cacheable-interceptor
 
 ```js
 import { Agent, setGlobalDispatcher } from 'undici'
-import { createInterceptor } from 'make-cacheable-interceptor'
+import { createInterceptor } from '@platformatic/slicer-interceptor'
 
 // Create an interceptor with header rules
 const interceptor = createInterceptor(

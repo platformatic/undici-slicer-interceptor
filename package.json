@@ -1,7 +1,7 @@
 {
-  "name": "make-cacheable-interceptor",
-  "version": "0.0.1",
-  "description": "Makes any response cacheable, according to rules",
+  "name": "@platformatic/slicer-interceptor",
+  "version": "0.1.0",
+  "description": "Add headers to outgoing requests and responses",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/platformatic/make-cacheable-interceptor.git"
+    "url": "git+https://github.com/platformatic/slicer-interceptor.git"
   },
   "keywords": [
     "undici",
@@ -28,9 +28,9 @@
   ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/platformatic/make-cacheable-interceptor/issues"
+    "url": "https://github.com/platformatic/slicer-interceptor/issues"
   },
-  "homepage": "https://github.com/platformatic/make-cacheable-interceptor#readme",
+  "homepage": "https://github.com/platformatic/slicer-interceptor#readme",
   "devDependencies": {
     "borp": "^0.19.0",
     "eslint": "^9.22.0",
