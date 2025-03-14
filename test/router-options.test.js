@@ -21,14 +21,10 @@ describe('make-cacheable-interceptor - router options', () => {
     try {
       // Create agent with our interceptor with ignoreTrailingSlash option
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [
-          { routeToMatch: `${hostname}/api/users`, headers: { 'cache-control': 'public, max-age=86400' } }
-        ],
-        {
-          ignoreTrailingSlash: true
-        }
-      )
+      const interceptor = createInterceptor({
+        rules: [{ routeToMatch: `${hostname}/api/users`, headers: { 'cache-control': 'public, max-age=86400' } }],
+        ignoreTrailingSlash: true,
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -72,14 +68,10 @@ describe('make-cacheable-interceptor - router options', () => {
     try {
       // Create agent with our interceptor with caseSensitive: false
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [
-          { routeToMatch: `${hostname}/api/Users`, headers: { 'cache-control': 'public, max-age=86400' } }
-        ],
-        {
-          caseSensitive: false
-        }
-      )
+      const interceptor = createInterceptor({
+        rules: [{ routeToMatch: `${hostname}/api/Users`, headers: { 'cache-control': 'public, max-age=86400' } }],
+        caseSensitive: false,
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -123,14 +115,10 @@ describe('make-cacheable-interceptor - router options', () => {
     try {
       // Create agent with our interceptor with ignoreDuplicateSlashes option
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [
-          { routeToMatch: `${hostname}/api/data`, headers: { 'cache-control': 'public, max-age=86400' } }
-        ],
-        {
-          ignoreDuplicateSlashes: true
-        }
-      )
+      const interceptor = createInterceptor({
+        rules: [{ routeToMatch: `${hostname}/api/data`, headers: { 'cache-control': 'public, max-age=86400' } }],
+        ignoreDuplicateSlashes: true,
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -174,19 +162,20 @@ describe('make-cacheable-interceptor - router options', () => {
     try {
       // Create agent with our interceptor with all options provided
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [
-          { routeToMatch: `${hostname}/api/data`, headers: { 'cache-control': 'public, max-age=86400' } }
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/api/data`,
+            headers: { 'cache-control': 'public, max-age=86400' },
+          },
         ],
-        {
-          ignoreTrailingSlash: true,
-          ignoreDuplicateSlashes: true,
-          maxParamLength: 200,
-          caseSensitive: false,
-          useSemicolonDelimiter: true,
-          cacheTagsHeader: 'x-custom-cache-tags'
-        }
-      )
+        ignoreTrailingSlash: true,
+        ignoreDuplicateSlashes: true,
+        maxParamLength: 200,
+        caseSensitive: false,
+        useSemicolonDelimiter: true,
+        cacheTagsHeader: 'x-custom-cache-tags',
+      })
 
       const composedAgent = agent.compose(interceptor)
 

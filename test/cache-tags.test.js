@@ -21,15 +21,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor using static cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/static/*`,
           headers: {
             'cache-control': 'public, max-age=86400',
             'x-cache-tags': { fgh: "'static', 'cdn'" }
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -63,15 +63,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor using route parameter-based cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/users/:userId`,
           headers: {
             'cache-control': 'private, max-age=3600',
             'x-cache-tags': { fgh: "'user-' + .params.userId, 'type-user'" }
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -105,15 +105,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor using querystring-based cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/products`,
           headers: {
             'cache-control': 'public, max-age=3600',
             'x-cache-tags': { fgh: ".querystring.category, 'products'" }
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -147,15 +147,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor using complex cache tag rules
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/api/:version/categories/:categoryId/products/:productId`,
           headers: {
             'cache-control': 'public, max-age=3600',
             'x-cache-tags': { fgh: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'" }
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -193,15 +193,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
 
   test('should throw error for invalid FGH expression in cache tag header', () => {
     assert.throws(() => {
-      createInterceptor([
-        {
+      createInterceptor({
+        rules: [{
           routeToMatch: 'example.com/invalid-test',
           headers: {
             'cache-control': 'public, max-age=3600',
             'x-cache-tags': { fgh: 'invalid[expression' } // This should cause an error during compilation
           }
-        }
-      ])
+        }]
+      })
     }, /Error compiling FGH expression for header x-cache-tags: invalid\[expression/)
   })
 
@@ -220,13 +220,13 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor without cache tags
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/no-tags`,
           headers: { 'cache-control': 'public, max-age=3600' }
           // No x-cache-tags header
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -261,15 +261,15 @@ describe('make-cacheable-interceptor - cache tags', () => {
     try {
       // Create agent with our interceptor
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
+      const interceptor = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname}/respect-existing`,
           headers: {
             'cache-control': 'public, max-age=3600',
             'x-cache-tags': { fgh: "'should-not-appear'" }
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

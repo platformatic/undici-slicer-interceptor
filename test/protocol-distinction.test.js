@@ -22,12 +22,14 @@ describe('make-cacheable-interceptor - protocol support', () => {
     try {
       // Create agent with interceptor that uses both protocol and non-protocol routes
       // (Now we only use the first rule found for an origin)
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: 'http://example.com/static/images/*',
-          headers: { 'cache-control': 'public, max-age=3600' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: 'http://example.com/static/images/*',
+            headers: { 'cache-control': 'public, max-age=3600' }
+          }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -46,12 +48,14 @@ describe('make-cacheable-interceptor - protocol support', () => {
       await res1.body.text()
 
       // Second test: use a server request with localhost
-      const interceptor2 = createInterceptor([
-        {
-          routeToMatch: `http://localhost:${port}/static/images/*`,
-          headers: { 'cache-control': 'public, max-age=3600' }
-        }
-      ])
+      const interceptor2 = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `http://localhost:${port}/static/images/*`,
+            headers: { 'cache-control': 'public, max-age=3600' }
+          }
+        ]
+      })
 
       const composedAgent2 = agent.compose(interceptor2)
 

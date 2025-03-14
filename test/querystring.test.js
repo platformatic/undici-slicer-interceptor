@@ -21,9 +21,11 @@ describe('make-cacheable-interceptor - querystring handling', () => {
     try {
       // Create agent with our interceptor
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'no-store' } }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          { routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'no-store' } }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -56,10 +58,10 @@ describe('make-cacheable-interceptor - querystring handling', () => {
     try {
       // Create agent with our interceptor with semicolon delimiter option
       const agent = new Agent()
-      const interceptor = createInterceptor(
-        [{ routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'no-store' } }],
-        { useSemicolonDelimiter: true }
-      )
+      const interceptor = createInterceptor({
+        rules: [{ routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'no-store' } }],
+        useSemicolonDelimiter: true,
+      })
 
       const composedAgent = agent.compose(interceptor)
 

@@ -44,16 +44,18 @@ describe('make-cacheable-interceptor - protocol in route', () => {
 
     try {
       // Create agent with our interceptor that includes protocol in the route
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `http://localhost:${port}/api/*`,
-          headers: { 'cache-control': 'public, max-age=86400' }
-        },
-        {
-          routeToMatch: 'other.example.com/api/*',
-          headers: { 'cache-control': 'no-store' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `http://localhost:${port}/api/*`,
+            headers: { 'cache-control': 'public, max-age=86400' }
+          },
+          {
+            routeToMatch: 'other.example.com/api/*',
+            headers: { 'cache-control': 'no-store' }
+          }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
@@ -111,16 +113,18 @@ describe('make-cacheable-interceptor - protocol in route', () => {
 
     try {
       // Create agent with our interceptor
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `http://localhost:${port}/api/*`,
-          headers: { 'cache-control': 'public, max-age=86400' }
-        },
-        {
-          routeToMatch: `localhost:${port}/static/*`,
-          headers: { 'cache-control': 'public, max-age=3600' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `http://localhost:${port}/api/*`,
+            headers: { 'cache-control': 'public, max-age=86400' }
+          },
+          {
+            routeToMatch: `localhost:${port}/static/*`,
+            headers: { 'cache-control': 'public, max-age=3600' }
+          }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

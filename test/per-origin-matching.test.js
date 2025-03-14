@@ -25,16 +25,18 @@ describe('make-cacheable-interceptor - per-origin matching', () => {
     const agent = new Agent()
 
     try {
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname1}/api/*`,
-          headers: { 'cache-control': 'public, max-age=86400' }
-        },
-        {
-          routeToMatch: `${hostname2}/api/*`,
-          headers: { 'cache-control': 'no-store' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname1}/api/*`,
+            headers: { 'cache-control': 'public, max-age=86400' }
+          },
+          {
+            routeToMatch: `${hostname2}/api/*`,
+            headers: { 'cache-control': 'no-store' }
+          }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

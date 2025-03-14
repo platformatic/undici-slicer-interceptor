@@ -15,7 +15,9 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Missing routeToMatch
     assert.throws(
       () => {
-        createInterceptor([{ headers: { 'cache-control': 'public, max-age=86400' } }])
+        createInterceptor({
+          rules: [{ headers: { 'cache-control': 'public, max-age=86400' } }]
+        })
       },
       { message: 'Each rule must have a routeToMatch string' }
     )
@@ -23,7 +25,7 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Missing headers
     assert.throws(
       () => {
-        createInterceptor([{ routeToMatch: 'example.com/api' }])
+        createInterceptor({ rules: [{ routeToMatch: 'example.com/api' }] })
       },
       { message: 'Each rule must have a headers object' }
     )
@@ -31,9 +33,12 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Invalid route format - missing origin
     assert.throws(
       () => {
-        createInterceptor([
-          { routeToMatch: '/api', headers: { 'cache-control': 'no-store' } }
-        ])
+        createInterceptor({
+          rules: [{
+            routeToMatch: '/api',
+            headers: { 'cache-control': 'no-store' }
+          }]
+        })
       },
       /Origin must be specified at the beginning of the route/
     )
@@ -41,9 +46,12 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Invalid route format - missing path
     assert.throws(
       () => {
-        createInterceptor([
-          { routeToMatch: 'example.com', headers: { 'cache-control': 'no-store' } }
-        ])
+        createInterceptor({
+          rules: [{
+            routeToMatch: 'example.com',
+            headers: { 'cache-control': 'no-store' }
+          }]
+        })
       },
       /Invalid route format/
     )
@@ -53,9 +61,12 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Non-string routeToMatch
     assert.throws(
       () => {
-        createInterceptor([
-          { routeToMatch: 123, headers: { 'cache-control': 'no-store' } }
-        ])
+        createInterceptor({
+          rules: [{
+            routeToMatch: 123,
+            headers: { 'cache-control': 'no-store' }
+          }]
+        })
       },
       { message: 'Each rule must have a routeToMatch string' }
     )
@@ -63,9 +74,12 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Non-object headers
     assert.throws(
       () => {
-        createInterceptor([
-          { routeToMatch: 'example.com/path', headers: 'invalid' }
-        ])
+        createInterceptor({
+          rules: [{
+            routeToMatch: 'example.com/path',
+            headers: 'invalid'
+          }]
+        })
       },
       { message: 'Each rule must have a headers object' }
     )
@@ -73,19 +87,24 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Empty routeToMatch
     assert.throws(
       () => {
-        createInterceptor([
-          { routeToMatch: '', headers: { 'cache-control': 'no-store' } }
-        ])
+        createInterceptor({
+          rules: [{
+            routeToMatch: '',
+            headers: { 'cache-control': 'no-store' }
+          }]
+        })
       },
       { message: 'Each rule must have a routeToMatch string' }
     )
 
     // Valid rules should work fine
     assert.doesNotThrow(() => {
-      createInterceptor([
-        { routeToMatch: 'example.com/api/*', headers: { 'cache-control': 'no-store' } },
-        { routeToMatch: 'api.example.com/path', headers: { 'cache-control': 'public, max-age=86400' } }
-      ])
+      createInterceptor({
+        rules: [
+          { routeToMatch: 'example.com/api/*', headers: { 'cache-control': 'no-store' } },
+          { routeToMatch: 'api.example.com/path', headers: { 'cache-control': 'public, max-age=86400' } }
+        ]
+      })
     })
   })
 })

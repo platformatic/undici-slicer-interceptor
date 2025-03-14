@@ -30,12 +30,14 @@ describe('make-cacheable-interceptor - protocol in route extended', () => {
 
     try {
       // Create agent with interceptor that uses protocol in route
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: 'http://example.com/static/images/*',
-          headers: { 'cache-control': 'public, max-age=3600' }
-        }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: 'http://example.com/static/images/*',
+            headers: { 'cache-control': 'public, max-age=3600' }
+          }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 

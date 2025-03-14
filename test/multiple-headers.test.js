@@ -21,29 +21,31 @@ describe('make-cacheable-interceptor - multiple headers', () => {
     try {
       // Create agent with our interceptor
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/static/*`,
-          headers: {
-            'cache-control': 'public, max-age=86400',
-            'x-custom-header': 'static-content',
-            'content-type': 'application/json'
+      const interceptor = createInterceptor({
+        rules: [
+          {
+            routeToMatch: `${hostname}/static/*`,
+            headers: {
+              'cache-control': 'public, max-age=86400',
+              'x-custom-header': 'static-content',
+              'content-type': 'application/json'
+            }
+          },
+          {
+            routeToMatch: `${hostname}/api/*`,
+            headers: {
+              'cache-control': 'no-store',
+              'x-api-version': '1.0'
+            }
+          },
+          {
+            routeToMatch: `${hostname}/backward-compat`,
+            headers: {
+              'cache-control': 'private, max-age=3600'
+            }
           }
-        },
-        {
-          routeToMatch: `${hostname}/api/*`,
-          headers: {
-            'cache-control': 'no-store',
-            'x-api-version': '1.0'
-          }
-        },
-        {
-          routeToMatch: `${hostname}/backward-compat`,
-          headers: {
-            'cache-control': 'private, max-age=3600'
-          }
-        }
-      ])
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
       setGlobalDispatcher(composedAgent)
@@ -94,16 +96,16 @@ describe('make-cacheable-interceptor - multiple headers', () => {
       const server2Url = `http://localhost:${server2.address().port}`
       const hostname2 = `localhost:${server2.address().port}`
 
-      const interceptor2 = createInterceptor([
-        {
+      const interceptor2 = createInterceptor({
+        rules: [{
           routeToMatch: `${hostname2}/*`,
           headers: {
             'cache-control': 'public, max-age=86400',
             'x-custom-header': 'test-value',
             'content-type': 'application/json'
           }
-        }
-      ])
+        }]
+      })
 
       const composedAgent2 = agent.compose(interceptor2)
       setGlobalDispatcher(composedAgent2)

@@ -21,10 +21,12 @@ describe('make-cacheable-interceptor - origin based routing', () => {
     try {
       // Create agent with our interceptor with origin in route
       const agent = new Agent()
-      const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'public, max-age=86400' } },
-        { routeToMatch: `${hostname}/static/*`, headers: { 'cache-control': 'public, max-age=3600' } }
-      ])
+      const interceptor = createInterceptor({
+        rules: [
+          { routeToMatch: `${hostname}/api/*`, headers: { 'cache-control': 'public, max-age=86400' } },
+          { routeToMatch: `${hostname}/static/*`, headers: { 'cache-control': 'public, max-age=3600' } }
+        ]
+      })
 
       const composedAgent = agent.compose(interceptor)
 
