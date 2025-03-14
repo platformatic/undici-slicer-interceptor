@@ -3,85 +3,99 @@ import assert from 'node:assert'
 import { createInterceptor } from '../index.js'
 
 describe('make-cacheable-interceptor - input validation', () => {
-  test('should handle invalid rules gracefully', async () => {
-    // Test array validation
-    try {
-      createInterceptor('not-an-array')
-      assert.fail('Should have thrown an error for non-array rules')
-    } catch (err) {
-      assert.strictEqual(err.message, 'Rules must be an array')
-    }
+  test('should handle invalid rules gracefully', () => {
+    // Not an array
+    assert.throws(
+      () => {
+        createInterceptor({})
+      },
+      { message: 'Rules must be an array' }
+    )
 
-    // Test rule validation - missing routeToMatch
-    try {
-      createInterceptor([{ cacheControl: 'no-store' }])
-      assert.fail('Should have thrown an error for missing routeToMatch')
-    } catch (err) {
-      assert.strictEqual(err.message, 'Each rule must have a routeToMatch string')
-    }
+    // Missing routeToMatch
+    assert.throws(
+      () => {
+        createInterceptor([{ cacheControl: 'public, max-age=86400' }])
+      },
+      { message: 'Each rule must have a routeToMatch string' }
+    )
 
-    // Test rule validation - missing cacheControl
-    try {
-      createInterceptor([{ routeToMatch: '/api' }])
-      assert.fail('Should have thrown an error for missing cacheControl')
-    } catch (err) {
-      assert.strictEqual(err.message, 'Each rule must have a cacheControl string')
-    }
+    // Missing cacheControl
+    assert.throws(
+      () => {
+        createInterceptor([{ routeToMatch: 'example.com/api' }])
+      },
+      { message: 'Each rule must have a cacheControl string' }
+    )
+
+    // Invalid route format - missing origin
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: '/api', cacheControl: 'no-store' }
+        ])
+      },
+      /Origin must be specified at the beginning of the route/
+    )
+
+    // Invalid route format - missing path
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: 'example.com', cacheControl: 'no-store' }
+        ])
+      },
+      /Invalid route format/
+    )
   })
 
-  test('should thoroughly test rule validation', async () => {
-    // Test with invalid rule missing routeToMatch
-    let error = null
-    try {
-      createInterceptor([{ cacheControl: 'no-store' }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a routeToMatch string')
+  test('should thoroughly test rule validation', () => {
+    // Non-string routeToMatch
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: 123, cacheControl: 'no-store' }
+        ])
+      },
+      { message: 'Each rule must have a routeToMatch string' }
+    )
 
-    // Test with null routeToMatch
-    error = null
-    try {
-      createInterceptor([{ routeToMatch: null, cacheControl: 'no-store' }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a routeToMatch string')
+    // Non-string cacheControl
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: 'example.com/path', cacheControl: 123 }
+        ])
+      },
+      { message: 'Each rule must have a cacheControl string' }
+    )
 
-    // Test with non-string routeToMatch
-    error = null
-    try {
-      createInterceptor([{ routeToMatch: 123, cacheControl: 'no-store' }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a routeToMatch string')
+    // Empty routeToMatch
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: '', cacheControl: 'no-store' }
+        ])
+      },
+      { message: 'Each rule must have a routeToMatch string' }
+    )
 
-    // Test with invalid rule missing cacheControl
-    error = null
-    try {
-      createInterceptor([{ routeToMatch: '/path' }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a cacheControl string')
+    // Empty cacheControl
+    assert.throws(
+      () => {
+        createInterceptor([
+          { routeToMatch: 'example.com/path', cacheControl: '' }
+        ])
+      },
+      { message: 'Each rule must have a cacheControl string' }
+    )
 
-    // Test with null cacheControl
-    error = null
-    try {
-      createInterceptor([{ routeToMatch: '/path', cacheControl: null }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a cacheControl string')
-
-    // Test with non-string cacheControl
-    error = null
-    try {
-      createInterceptor([{ routeToMatch: '/path', cacheControl: 123 }])
-    } catch (err) {
-      error = err
-    }
-    assert.strictEqual(error.message, 'Each rule must have a cacheControl string')
+    // Valid rules should work fine
+    assert.doesNotThrow(() => {
+      createInterceptor([
+        { routeToMatch: 'example.com/api/*', cacheControl: 'no-store' },
+        { routeToMatch: 'api.example.com/path', cacheControl: 'public, max-age=86400' }
+      ])
+    })
   })
 })

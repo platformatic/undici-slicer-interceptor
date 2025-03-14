@@ -16,6 +16,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using a custom cache tags header
@@ -23,7 +24,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
       const interceptor = createInterceptor(
         [
           {
-            routeToMatch: '/products/:id',
+            routeToMatch: `${hostname}/products/:id`,
             cacheControl: 'public, max-age=3600',
             cacheTags: "'product-' + .params.id, 'category-all'"
           }
@@ -62,6 +63,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
@@ -69,7 +71,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
       const interceptor = createInterceptor(
         [
           {
-            routeToMatch: '/respect-existing',
+            routeToMatch: `${hostname}/respect-existing`,
             cacheControl: 'public, max-age=3600',
             cacheTags: "'should-not-appear'"
           }
@@ -106,13 +108,14 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor without specifying a custom cache tags header
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/default-header',
+          routeToMatch: `${hostname}/default-header`,
           cacheControl: 'public, max-age=3600',
           cacheTags: "'default-tag'"
         }

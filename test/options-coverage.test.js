@@ -7,8 +7,6 @@ import { createInterceptor } from '../index.js'
 
 describe('make-cacheable-interceptor - options coverage', () => {
   test('should provide all router options correctly', async () => {
-    // This test is to ensure code coverage for router options
-
     // Setup test server
     const server = createServer((req, res) => {
       res.end('hello world')
@@ -18,24 +16,28 @@ describe('make-cacheable-interceptor - options coverage', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
-      // Create agent with our interceptor with all router options explicitly set
+      // Create agent with our interceptor with all options provided
       const agent = new Agent()
       const interceptor = createInterceptor(
-        [{ routeToMatch: '/', cacheControl: 'public, max-age=86400' }],
+        [
+          { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
+        ],
         {
           ignoreTrailingSlash: true,
           ignoreDuplicateSlashes: true,
           maxParamLength: 200,
           caseSensitive: false,
-          useSemicolonDelimiter: true
+          useSemicolonDelimiter: true,
+          cacheTagsHeader: 'x-custom-cache-tags'
         }
       )
 
       const composedAgent = agent.compose(interceptor)
 
-      // Test that the interceptor works with these options
+      // Test request
       const res = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
@@ -43,7 +45,7 @@ describe('make-cacheable-interceptor - options coverage', () => {
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-      await res.body.text()
+      await res.body.dump()
     } finally {
       server.close()
     }

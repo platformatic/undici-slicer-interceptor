@@ -10,7 +10,7 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * jq-style rules implemented via fgh.
  *
  * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: string}>} rules - Array of rules for cache control
- * @param {string} rules[].routeToMatch - Path pattern to match for applying the cache rule
+ * @param {string} rules[].routeToMatch - Origin and path pattern to match in format "hostname:port/path" or "hostname/path"
  * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
  * @param {string} [rules[].cacheTags] - JQ-style expression via fgh to generate cache tags from params, querystring, and request headers.
  * For multiple values, use comma-separated syntax like ".params.id, 'static'" or ".,." for multiple outputs.
@@ -32,22 +32,22 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * const interceptor = createInterceptor(
  *   [
  *     {
- *       routeToMatch: '/static/*',
+ *       routeToMatch: 'localhost:3042/static/*',
  *       cacheControl: 'public, max-age=86400',
  *       cacheTags: "'static'"
  *     },
  *     {
- *       routeToMatch: '/users/:id',
+ *       routeToMatch: 'localhost:3042/users/:id',
  *       cacheControl: 'public, max-age=3600',
  *       cacheTags: "'user-' + .params.id"
  *     },
  *     {
- *       routeToMatch: '/api/products',
+ *       routeToMatch: 'localhost:3042/api/products',
  *       cacheControl: 'public, max-age=3600',
  *       cacheTags: ".querystring.category"
  *     },
  *     {
- *       routeToMatch: '/api/auth',
+ *       routeToMatch: 'api.example.com/api/auth',
  *       cacheControl: 'public, max-age=600',
  *       cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
  *     }

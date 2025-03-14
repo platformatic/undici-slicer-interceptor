@@ -16,13 +16,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using static cache tags
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/static/*',
+          routeToMatch: `${hostname}/static/*`,
           cacheControl: 'public, max-age=86400',
           cacheTags: "'static', 'cdn'"
         }
@@ -55,13 +56,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using route parameter-based cache tags
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/users/:userId',
+          routeToMatch: `${hostname}/users/:userId`,
           cacheControl: 'private, max-age=3600',
           cacheTags: "'user-' + .params.userId, 'type-user'"
         }
@@ -94,13 +96,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using querystring-based cache tags
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/products',
+          routeToMatch: `${hostname}/products`,
           cacheControl: 'public, max-age=3600',
           cacheTags: ".querystring.category, 'products'"
         }
@@ -133,13 +136,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor using complex cache tag rules
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/api/:version/categories/:categoryId/products/:productId',
+          routeToMatch: `${hostname}/api/:version/categories/:categoryId/products/:productId`,
           cacheControl: 'public, max-age=3600',
           cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
         }
@@ -183,7 +187,7 @@ describe('make-cacheable-interceptor - cache tags', () => {
     assert.throws(() => {
       createInterceptor([
         {
-          routeToMatch: '/invalid-test',
+          routeToMatch: 'example.com/invalid-test',
           cacheControl: 'public, max-age=3600',
           cacheTags: 'invalid[expression' // This should cause an error during compilation
         }
@@ -201,13 +205,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor without cache tags
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/no-tags',
+          routeToMatch: `${hostname}/no-tags`,
           cacheControl: 'public, max-age=3600'
           // No cacheTags property
         }
@@ -241,13 +246,14 @@ describe('make-cacheable-interceptor - cache tags', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: '/respect-existing',
+          routeToMatch: `${hostname}/respect-existing`,
           cacheControl: 'public, max-age=3600',
           cacheTags: "'should-not-appear'"
         }

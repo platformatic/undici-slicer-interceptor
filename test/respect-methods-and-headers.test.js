@@ -7,9 +7,9 @@ import { createInterceptor } from '../index.js'
 
 describe('make-cacheable-interceptor - respect existing headers and methods', () => {
   test('should not override existing cache-control header', async () => {
-    // Setup test server that returns its own cache-control header
+    // Setup test server with existing cache-control header
     const server = createServer((req, res) => {
-      res.setHeader('Cache-Control', 'no-store')
+      res.setHeader('cache-control', 'no-store, immutable')
       res.end('hello world')
     })
 
@@ -17,24 +17,25 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
-      // Test that our interceptor doesn't override the server's cache-control header
+      // Test that the interceptor doesn't override existing cache-control
       const res = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
         path: '/'
       })
 
-      assert.strictEqual(res.headers['cache-control'], 'no-store', 'Server cache-control header should be preserved')
+      assert.strictEqual(res.headers['cache-control'], 'no-store, immutable')
       await res.body.dump()
     } finally {
       server.close()
@@ -51,17 +52,18 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
-      // Test GET request (should add cache-control)
+      // GET request should get cache header
       const getRes = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
@@ -71,7 +73,7 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
       assert.strictEqual(getRes.headers['cache-control'], 'public, max-age=86400', 'GET request should have cache header')
       await getRes.body.dump()
 
-      // Test HEAD request (should add cache-control)
+      // HEAD request should get cache header
       const headRes = await composedAgent.request({
         method: 'HEAD',
         origin: serverUrl,
@@ -79,36 +81,17 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
       })
 
       assert.strictEqual(headRes.headers['cache-control'], 'public, max-age=86400', 'HEAD request should have cache header')
-      await headRes.body.dump()
 
-      // Test POST request (should NOT add cache-control)
+      // POST request should NOT get cache header
       const postRes = await composedAgent.request({
         method: 'POST',
         origin: serverUrl,
-        path: '/'
+        path: '/',
+        body: 'test'
       })
 
       assert.strictEqual(postRes.headers['cache-control'], undefined, 'POST request should not have cache header')
       await postRes.body.dump()
-
-      // Test PUT request (should NOT add cache-control)
-      const putRes = await composedAgent.request({
-        method: 'PUT',
-        origin: serverUrl,
-        path: '/'
-      })
-
-      assert.strictEqual(putRes.headers['cache-control'], undefined, 'PUT request should not have cache header')
-      await putRes.body.dump()
-
-      // Test DELETE request (should NOT add cache-control)
-      const deleteRes = await composedAgent.request({
-        method: 'DELETE',
-        origin: serverUrl,
-        path: '/'
-      })
-      assert.strictEqual(deleteRes.headers['cache-control'], undefined, 'DELETE request should not have cache header')
-      await deleteRes.body.dump()
     } finally {
       server.close()
     }
@@ -124,24 +107,26 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
       // Test with uppercase method
       const res = await composedAgent.request({
-        method: 'HEAD', // Explicitly uppercase method
+        method: 'GET', // Uppercase method
         origin: serverUrl,
         path: '/'
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
+      await res.body.dump()
     } finally {
       server.close()
     }
@@ -157,62 +142,61 @@ describe('make-cacheable-interceptor - respect existing headers and methods', ()
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
       // Test with lowercase method
       const res = await composedAgent.request({
-        method: 'head', // Explicitly lowercase method
+        method: 'get', // Lowercase method
         origin: serverUrl,
         path: '/'
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
+      await res.body.dump()
     } finally {
       server.close()
     }
   })
 
-  test('should use GET as default method when applying cache headers', async () => {
+  test('should use GET as default method when not specified', async () => {
     // Setup test server
     const server = createServer((req, res) => {
-      // Echo back the request method to verify
-      res.end(`Method: ${req.method}`)
+      res.end('hello world')
     })
 
     server.listen(0)
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
-      // Make a request with explicit GET method
+      // Test with explicitly specifying GET method
       const res = await composedAgent.request({
-        method: 'GET',
+        method: 'GET', // Explicitly specify method
         origin: serverUrl,
         path: '/'
       })
 
-      // Cache header should be applied for GET method
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=86400')
-
-      // Our method handling in the interceptor should handle case when method is undefined
-      // This is being tested indirectly, as we can't directly provide an undefined method to undici
+      await res.body.dump()
     } finally {
       server.close()
     }

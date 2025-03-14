@@ -16,12 +16,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -51,12 +52,13 @@ describe('make-cacheable-interceptor - path handling', () => {
     await once(server, 'listening')
 
     const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
 
     try {
       // Create agent with our interceptor
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: '/', cacheControl: 'public, max-age=86400' }
+        { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
       ])
 
       const composedAgent = agent.compose(interceptor)
