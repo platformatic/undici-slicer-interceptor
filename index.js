@@ -1,6 +1,7 @@
 import { validateRules, sortRulesBySpecificity } from './lib/validator.js'
 import { createRouter } from './lib/router.js'
 import { createInterceptorFunction } from './lib/interceptor.js'
+import abstractLogging from 'abstract-logging'
 
 /**
  * Creates an undici interceptor that adds headers based on specified rules.
@@ -21,6 +22,9 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * @param {number} [options.maxParamLength=100] - Maximum length of a parameter
  * @param {boolean} [options.caseSensitive=true] - Use case sensitive routing
  * @param {boolean} [options.useSemicolonDelimiter=false] - Use semicolon instead of ampersand as query param delimiter
+ * @param {Object} [options.logger=abstract-logging] - Logger instance (pino compatible)
+ * The logger can be any Pino-compatible logger. It will log interceptor operations
+ * such as creation, rule validation, route matching, and header application.
  * @returns {Function} - An undici interceptor function that can be composed with a dispatcher
  *
  * @example
@@ -80,19 +84,23 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  */
 export function createInterceptor (options = {}) {
   // Default option for cache tags header name
-  const { rules, ...routeOptions } = options
+  // Default logger to abstract-logging if not provided
+  const { rules, logger: optsLogger, ...routeOptions } = options
+  
+  const logger = optsLogger || abstractLogging
+  logger.debug('Creating cacheable interceptor with %d rules', rules?.length || 0)
 
   // Validate rules
-  validateRules(rules)
+  validateRules(rules, logger)
 
   // Sort rules by specificity
-  const sortedRules = sortRulesBySpecificity(rules)
+  const sortedRules = sortRulesBySpecificity(rules, logger)
 
   // Create and configure router
-  const router = createRouter(sortedRules, routeOptions)
+  const router = createRouter(sortedRules, routeOptions, logger)
 
   // Create and return the interceptor function
-  return createInterceptorFunction(router)
+  return createInterceptorFunction(router, logger)
 }
 
 export default createInterceptor
