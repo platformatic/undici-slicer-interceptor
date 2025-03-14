@@ -14,6 +14,7 @@ npm install @platformatic/slicer-interceptor
 - Supports defining multiple headers in a single rule
 - Supports dynamic header values using FGH expressions
 - Origin-specific routes (host:port + path patterns)
+- **NEW**: Support for response-based headers that can use values from the response body
 - Supports dynamic cache tag headers for fine-grained cache invalidation strategies
 - Configurable logging with Pino-compatible logger interface
 - Uses find-my-way for efficient URL routing and matching
@@ -52,7 +53,7 @@ const interceptor = createInterceptor(
         }
       }, // 1 day for other static content
       
-      // Dynamic header values using FGH
+      // Dynamic header values using FGH with request data
       { 
         routeToMatch: 'https://example.com/users/:userId', 
         headers: {
@@ -63,15 +64,16 @@ const interceptor = createInterceptor(
         }
       }, // 1 hour for user profiles with user-specific tag
       
-      // More examples of dynamic headers
+      // Dynamic header values using FGH with response body data
       { 
         routeToMatch: 'http://api.example.com/v1/products/:productId', 
         headers: {
           'cache-control': 'public, max-age=1800',
           'x-product-id': { fgh: '.params.productId' },
-          'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
+          'x-response-product-id': { fgh: '.response.body.id' }, // From response body
+          'x-cache-tags': { fgh: "'product', 'product-' + .response.body.id" } // Uses response body data
         }
-      }, // 30 minutes for product data with tags based on product ID and variant
+      }, // 30 minutes for product data with tags based on product ID from response
       
       { 
         routeToMatch: 'https://api.example.com/v1/cache/*', 
@@ -128,6 +130,8 @@ const interceptor = createInterceptor({
 
 For dynamic header values, use an object with an `fgh` property containing an FGH expression:
 
+#### Using Request Data
+
 ```js
 const interceptor = createInterceptor({
   rules: [{
@@ -140,6 +144,24 @@ const interceptor = createInterceptor({
   }]
 })
 ```
+
+#### Using Response Body Data (NEW)
+
+```js
+const interceptor = createInterceptor({
+  rules: [{
+    routeToMatch: 'https://api.example.com/products/:productId',
+    headers: {
+      'cache-control': 'public, max-age=3600',
+      'x-product-id': { fgh: '.params.productId' },
+      'x-response-id': { fgh: '.response.body.id' },
+      'x-cache-tags': { fgh: "'product', 'product-' + .response.body.id" }
+    }
+  }]
+})
+```
+
+For expressions that reference `.response.body`, the interceptor will automatically detect this and use a special mode that processes the response body.
 
 ### Header Precedence
 
@@ -184,9 +206,7 @@ const interceptor = createInterceptor(
 )
 ```
 
-## Route Matching
-
-### Logging
+## Logging
 
 The interceptor supports logging with any Pino-compatible logger. By default, it uses `abstract-logging` which is a no-op logger that doesn't output anything.
 
@@ -308,7 +328,7 @@ The interceptor supports generating dynamic header values using FGH expressions.
 
 ### FGH Expression Syntax
 
-FGH expressions use a simple query language that's similar to jq syntax. These expressions are evaluated against a context object containing request information.
+FGH expressions use a simple query language that's similar to jq syntax. These expressions are evaluated against a context object containing request information or response data.
 
 #### Available Context Properties
 
@@ -316,6 +336,7 @@ FGH expressions use a simple query language that's similar to jq syntax. These e
 - `.params` - An object containing route parameters (e.g., `:userId` becomes `.params.userId`)
 - `.querystring` - An object containing query string parameters
 - `.headers` - An object containing request headers (lowercase keys)
+- `.response.body` - The parsed JSON response body (when response body access is used)
 
 #### Expression Types
 
@@ -356,6 +377,24 @@ Access request headers using the `.headers` object:
 ```
 
 For a request with `X-Tenant-ID: tenant-123` header, this would evaluate to `tenant-123`.
+
+##### Response Body Access (NEW)
+
+Access the response body data using the `.response.body` object:
+
+```js
+.response.body.id
+```
+
+For a response with `{"id": "prod-123", "name": "Sample Product"}`, this would evaluate to `prod-123`.
+
+For array responses, you can iterate through the items:
+
+```js
+.response.body[].id
+```
+
+For a response with `[{"id": "prod-1"}, {"id": "prod-2"}]`, this would evaluate to `prod-1,prod-2`.
 
 ##### Combining Values
 
@@ -423,45 +462,41 @@ For `/users/123`, this adds:
 - `x-user-id: 123`
 - `x-cache-tags: user-123,type-user`
 
-#### Product Category Headers
+#### Response Body Headers (NEW)
+
+```js
+{
+  routeToMatch: 'http://api.example.com/products/:productId',
+  headers: { 
+    'cache-control': 'public, max-age=3600',
+    'x-product-id': { fgh: '.params.productId' },
+    'x-product-name': { fgh: '.response.body.name' },
+    'x-cache-tags': { fgh: "'product-' + .response.body.id" }
+  }
+}
+```
+
+For a response with `{"id": "laptop-123", "name": "MacBook Pro"}`, this adds:
+- `x-product-id: [productId from route]`
+- `x-product-name: MacBook Pro`
+- `x-cache-tags: product-laptop-123`
+
+#### Array Responses (NEW)
 
 ```js
 {
   routeToMatch: 'http://api.example.com/products',
   headers: { 
     'cache-control': 'public, max-age=3600',
-    'x-category': { fgh: '.querystring.category // "all"' },
-    'x-cache-tags': { fgh: ".querystring.category, 'products'" }
+    'x-product-count': { fgh: '.response.body | length' },
+    'x-cache-tags': { fgh: "'products', .response.body[].id" }
   }
 }
 ```
 
-For `/products?category=electronics`, this adds:
-- `x-category: electronics`
-- `x-cache-tags: electronics,products`
-
-#### Complex API Paths with Multiple Dynamic Values
-
-```js
-{
-  routeToMatch: 'https://api.example.com/:version/categories/:categoryId/products/:productId',
-  headers: { 
-    'cache-control': 'public, max-age=3600',
-    'x-api-version': { fgh: '.params.version' },
-    'x-category': { fgh: '.params.categoryId' },
-    'x-product': { fgh: '.params.productId' },
-    'x-variant': { fgh: '.querystring.variant // "default"' },
-    'x-cache-tags': { fgh: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'" }
-  }
-}
-```
-
-For `/api/v1/categories/electronics/products/laptop-123?variant=premium`, this adds:
-- `x-api-version: v1`
-- `x-category: electronics`
-- `x-product: laptop-123`
-- `x-variant: premium`
-- `x-cache-tags: api-version-v1,category-electronics,product-laptop-123,premium`
+For a response with `[{"id": "prod-1"}, {"id": "prod-2"}, {"id": "prod-3"}]`, this adds:
+- `x-product-count: 3`
+- `x-cache-tags: products,prod-1,prod-2,prod-3`
 
 ### Error Handling
 
@@ -491,15 +526,32 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 
 In this case, the expression would automatically target the custom header name.
 
+## Implementation Notes
+
+### Request-Based Headers
+
+Headers that only use request data (`.params`, `.querystring`, `.headers`) are applied during the `onHeaders` phase of the request lifecycle. This is the standard approach and has minimal overhead.
+
+### Response-Based Headers (NEW)
+
+Headers that access the response body (using `.response.body`) require a more complex implementation. The interceptor automatically detects these expressions and uses a specialized handler that:
+
+1. Identifies rules that contain `.response.body` expressions
+2. For these rules, it adds request-based headers normally
+3. Response body based headers are skipped during initial processing
+
+Currently, response body based headers will be supported in a future update. The implementation is still in progress.
+
 ## Best Practices
 
-1. **Use static values when possible**: Only use FGH expressions when you need dynamic values
-2. **Keep expressions simple**: Avoid deeply nested expressions for better performance
-3. **Provide default values**: Use the null coalescing operator for optional parameters
-4. **Consider security**: Avoid including sensitive data in headers
-5. **Be consistent**: Use a standard naming convention for headers across your application
-6. **Prefix tags**: For cache tags, use prefixes to organize them (e.g., `user-`, `product-`)
-7. **Test your expressions**: Verify that your FGH expressions generate the expected values
+1. **Prefer request-based headers**: When possible, use request data instead of response data
+2. **Use static values when possible**: Only use FGH expressions when you need dynamic values
+3. **Keep expressions simple**: Avoid deeply nested expressions for better performance
+4. **Provide default values**: Use the null coalescing operator for optional parameters
+5. **Consider security**: Avoid including sensitive data in headers
+6. **Be consistent**: Use a standard naming convention for headers across your application
+7. **Prefix tags**: For cache tags, use prefixes to organize them (e.g., `user-`, `product-`)
+8. **Test your expressions**: Verify that your FGH expressions generate the expected values
 
 ## Notes
 
