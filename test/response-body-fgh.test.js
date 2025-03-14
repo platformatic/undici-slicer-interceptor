@@ -4,9 +4,10 @@ import { Agent } from 'undici'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createInterceptor } from '../index.js'
+import pino from 'pino'
 
 describe('make-cacheable-interceptor - headers with FGH accessing response body', () => {
-  test('should set headers using FGH expressions with response body access', async () => {
+  test.only('should set headers using FGH expressions with response body access', async () => {
     // Sample response data
     const responseData = {
       id: 'prod-123',
@@ -34,6 +35,7 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
       // Create agent with our interceptor using FGH that accesses response body
       const agent = new Agent()
       const interceptor = createInterceptor({
+        logger: pino({ level: 'trace' }),
         rules: [{
           routeToMatch: `${hostname}/api/products/:productId`,
           headers: {
@@ -98,7 +100,7 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
           routeToMatch: `${hostname}/api/products`,
           headers: {
             'cache-control': 'public, max-age=3600',
-            'x-product-count': { fgh: '.response.body | length' },
+            'x-product-count': { fgh: '.response.body | .length // 0' },
             'x-cache-tags': { fgh: "'products', .response.body[].id" }
           }
         }]

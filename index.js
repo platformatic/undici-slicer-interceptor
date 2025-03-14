@@ -1,5 +1,7 @@
 import { validateRules, sortRulesBySpecificity } from './lib/validator.js'
 import { createSimpleInterceptor } from './lib/simpleInterceptor.js'
+import { createUnifiedInterceptor } from './lib/modifiedInterceptor.js'
+import { doesRuleRequireResponseAccess } from './lib/responseDetector.js'
 import abstractLogging from 'abstract-logging'
 
 /**
@@ -11,7 +13,7 @@ import abstractLogging from 'abstract-logging'
  *
  * Supports two types of dynamic headers:
  * 1. Request-based headers: Generated from request data like params, querystring, and headers
- * 2. Response-based headers: Generated from response body data (not yet implemented)
+ * 2. Response-based headers: Generated from response body data
  *
  * @param {Object} options - Options for the interceptor
  * @param {Array<{routeToMatch: string, headers?: Object}>} options.rules - Array of rules for headers
@@ -53,6 +55,13 @@ import abstractLogging from 'abstract-logging'
  *         'x-user-id': { fgh: ".params.id" },
  *         'x-cache-tags': { fgh: "'user-' + .params.id, 'type-user'" }
  *       }
+ *     },
+ *     {
+ *       routeToMatch: 'localhost:3042/products/:id',
+ *       headers: {
+ *         'cache-control': 'public, max-age=3600',
+ *         'x-cache-tags': { fgh: "'product-' + .response.body.id" }
+ *       }
  *     }
  *   ],
  *   ignoreTrailingSlash: true,
@@ -61,7 +70,7 @@ import abstractLogging from 'abstract-logging'
  *
  * // This will add headers to GET and HEAD requests that don't already
  * // have those headers. Dynamic headers can use jq-style expressions
- * // to generate values based on request context.
+ * // to generate values based on request context or response body.
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)
  * ```
@@ -73,19 +82,45 @@ export function createInterceptor (options = {}) {
   // Default logger to abstract-logging if not provided
   const logger = optsLogger || abstractLogging
   logger.debug(`Creating cacheable interceptor with ${rules.length} rules`)
+  
+  // Validate that rules is an array
+  if (!Array.isArray(rules)) {
+    logger.error('Invalid rules format: not an array')
+    throw new Error('Rules must be an array')
+  }
 
   // Validate rules
   validateRules(rules, logger)
 
   // Sort rules by specificity
   const sortedRules = sortRulesBySpecificity(rules, logger)
-
-  // Create a simple interceptor that only handles request-based headers
-  return createSimpleInterceptor({
-    rules: sortedRules,
-    logger,
-    ...routeOptions
-  })
+  
+  // Check if any rules require response body access
+  let needsResponseInterceptor = false
+  for (const rule of sortedRules) {
+    if (doesRuleRequireResponseAccess(rule.headers)) {
+      needsResponseInterceptor = true
+      logger.debug({ rule: rule.routeToMatch }, 'Found rule requiring response access')
+      break
+    }
+  }
+  
+  // Select appropriate interceptor based on presence of response-based headers
+  if (needsResponseInterceptor) {
+    logger.debug('Using unified interceptor that can handle response body access')
+    return createUnifiedInterceptor({
+      rules: sortedRules,
+      logger,
+      ...routeOptions
+    })
+  } else {
+    logger.debug('Using simple interceptor for request-only headers')
+    return createSimpleInterceptor({
+      rules: sortedRules,
+      logger,
+      ...routeOptions
+    })
+  }
 }
 
 export default createInterceptor

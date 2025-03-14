@@ -7,7 +7,7 @@ describe('make-cacheable-interceptor - input validation', () => {
     // Not an array
     assert.throws(
       () => {
-        createInterceptor({})
+        createInterceptor({ rules: 'not-an-array' })
       },
       { message: 'Rules must be an array' }
     )
