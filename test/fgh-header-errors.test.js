@@ -8,7 +8,7 @@ describe('make-cacheable-interceptor - FGH header errors', () => {
       createInterceptor([
         {
           routeToMatch: 'example.com/invalid-fgh-header',
-          headers: { 
+          headers: {
             'cache-control': 'public, max-age=3600',
             'x-invalid-fgh': { fgh: 'invalid[expression' } // This should cause an error during compilation
           }
@@ -22,7 +22,7 @@ describe('make-cacheable-interceptor - FGH header errors', () => {
       createInterceptor([
         {
           routeToMatch: 'example.com/missing-fgh-prop',
-          headers: { 
+          headers: {
             'cache-control': 'public, max-age=3600',
             'x-wrong-object': { wrong: 'This is not a valid FGH object' } // Missing fgh property
           }

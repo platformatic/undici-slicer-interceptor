@@ -12,9 +12,9 @@ npm install make-cacheable-interceptor
 
 - Automatically adds headers to HTTP responses based on URL patterns
 - Supports defining multiple headers in a single rule
-
+- Supports dynamic header values using FGH expressions
 - Origin-specific routes (host:port + path patterns)
-- Adds cache tag headers for fine-grained cache invalidation strategies
+- Supports dynamic cache tag headers for fine-grained cache invalidation strategies
 - Uses find-my-way for efficient URL routing and matching
 - Respects existing headers (never overrides them)
 - Only applies to GET and HEAD requests
@@ -31,56 +31,60 @@ import { createInterceptor } from 'make-cacheable-interceptor'
 // Create an interceptor with header rules
 const interceptor = createInterceptor(
   [
-    // Using the new headers object to set multiple headers
+    // Static header values
     { 
       routeToMatch: 'http://example.com/static/images/*', 
       headers: {
         'cache-control': 'public, max-age=604800',
         'content-type': 'image/jpeg',
-        'x-custom-header': 'static-image'
-      },
-      cacheTags: "'static', 'images'" 
+        'x-custom-header': 'static-image',
+        'x-cache-tags': { fgh: "'static', 'images'" }
+      }
     }, // 1 week for images with custom headers
     
     { 
       routeToMatch: 'http://example.com/static/*', 
       headers: {
-        'cache-control': 'public, max-age=86400'
-      },
-      cacheTags: "'static', 'content'"
+        'cache-control': 'public, max-age=86400',
+        'x-cache-tags': { fgh: "'static', 'content'" }
+      }
     }, // 1 day for other static content
     
-    // Another example with headers
+    // Dynamic header values using FGH
     { 
       routeToMatch: 'https://example.com/users/:userId', 
       headers: {
         'cache-control': 'private, max-age=3600',
-        'x-user-route': 'true'
-      },
-      cacheTags: "'user', 'user-' + .params.userId" 
+        'x-user-route': 'true',
+        'x-user-id': { fgh: '.params.userId' },
+        'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
+      }
     }, // 1 hour for user profiles with user-specific tag
     
-    // Rest of your rules...
+    // More examples of dynamic headers
     { 
       routeToMatch: 'http://api.example.com/v1/products/:productId', 
       headers: {
-        'cache-control': 'public, max-age=1800'
-      },
-      cacheTags: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" 
+        'cache-control': 'public, max-age=1800',
+        'x-product-id': { fgh: '.params.productId' },
+        'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
+      }
     }, // 30 minutes for product data with tags based on product ID and variant
+    
     { 
       routeToMatch: 'https://api.example.com/v1/cache/*', 
       headers: {
-        'cache-control': 'public, max-age=3600'
-      },
-      cacheTags: "'api', 'v1', 'cacheable'"
+        'cache-control': 'public, max-age=3600',
+        'x-cache-tags': { fgh: "'api', 'v1', 'cacheable'" }
+      }
     }, // 1 hour for cacheable API
+    
     { 
       routeToMatch: 'https://api.example.com/*', 
       headers: {
-        'cache-control': 'no-store'
-      },
-      cacheTags: "'api'"
+        'cache-control': 'no-store',
+        'x-cache-tags': { fgh: "'api'" }
+      }
     } // No caching for other API endpoints
   ],
   { 
@@ -99,11 +103,11 @@ setGlobalDispatcher(composedAgent)
 
 ## Setting Headers
 
-The interceptor uses the `headers` object to define headers to be applied to responses.
+The interceptor uses the `headers` object to define headers to be applied to responses, with support for both static and dynamic values.
 
-### Using the Headers Object
+### Static Header Values
 
-The `headers` object lets you set multiple headers in a single rule. Each key-value pair in the object represents a header name and its value:
+For static header values, simply use strings:
 
 ```js
 const interceptor = createInterceptor([
@@ -119,16 +123,22 @@ const interceptor = createInterceptor([
 ])
 ```
 
-With this configuration, all matching responses will include:
+### Dynamic Header Values with FGH
 
+For dynamic header values, use an object with an `fgh` property containing an FGH expression:
+
+```js
+const interceptor = createInterceptor([
+  {
+    routeToMatch: 'https://api.example.com/users/:userId',
+    headers: {
+      'cache-control': 'public, max-age=3600',
+      'x-user-id': { fgh: '.params.userId' },
+      'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
+    }
+  }
+])
 ```
-cache-control: public, max-age=3600
-x-api-version: 1.0
-content-type: application/json
-x-custom-header: custom-value
-```
-
-
 
 ### Header Precedence
 
@@ -157,7 +167,14 @@ Example with options:
 ```js
 const interceptor = createInterceptor(
   [
-    { routeToMatch: 'http://api.example.com/users', headers: { 'cache-control': 'no-store', 'x-api-version': '1.0' } }
+    { 
+      routeToMatch: 'http://api.example.com/users', 
+      headers: { 
+        'cache-control': 'no-store', 
+        'x-api-version': '1.0',
+        'x-cache-tags': { fgh: "'users'" }
+      } 
+    }
   ],
   {
     ignoreTrailingSlash: true,
@@ -202,64 +219,61 @@ The path part of the route uses [find-my-way](https://github.com/delvedor/find-m
 #### Simple paths
 
 ```js
-{ routeToMatch: 'http://api.example.com/users', headers: { 'cache-control': 'no-store' } }
+{ 
+  routeToMatch: 'http://api.example.com/users', 
+  headers: { 'cache-control': 'no-store' } 
+}
 ```
 
 #### Wildcard paths
 
 ```js
-{ routeToMatch: 'https://cdn.example.com/static/*', headers: { 'cache-control': 'public, max-age=86400' } }
+{ 
+  routeToMatch: 'https://cdn.example.com/static/*', 
+  headers: { 'cache-control': 'public, max-age=86400' } 
+}
 ```
 
 #### Route parameters
 
 ```js
-{ routeToMatch: 'http://api.example.com/users/:userId', headers: { 'cache-control': 'private, max-age=3600' } }
-{ routeToMatch: 'https://api.example.com/products/:category/:productId', headers: { 'cache-control': 'public, max-age=86400' } }
+{ 
+  routeToMatch: 'http://api.example.com/users/:userId', 
+  headers: { 
+    'cache-control': 'private, max-age=3600',
+    'x-user-id': { fgh: '.params.userId' }
+  } 
+}
 ```
 
 #### Combining parameters and wildcards
 
 ```js
-{ routeToMatch: 'https://app.example.com/:tenant/dashboard/*', headers: { 'cache-control': 'private, max-age=60' } }
+{ 
+  routeToMatch: 'https://app.example.com/:tenant/dashboard/*', 
+  headers: { 
+    'cache-control': 'private, max-age=60',
+    'x-tenant': { fgh: '.params.tenant' }
+  } 
+}
 ```
 
 When defining rules, more specific paths take precedence over more general ones. For example, if you have rules for both `https://api.example.com/*` and `https://api.example.com/v1/cache/*`, requests to `https://api.example.com/v1/cache/data` will use the `https://api.example.com/v1/cache/*` rule.
 
-## Cache Tags
+## Dynamic Headers with FGH
 
-Cache tags provide a powerful way to implement targeted cache invalidation strategies. You can dynamically generate cache tag headers based on URL path patterns, route parameters, and query string values. By default, these are added as `x-cache-tags` headers, but you can customize the header name using the `cacheTagsHeader` option.
+The interceptor supports generating dynamic header values using FGH expressions. This is particularly useful for cache tags, user-specific headers, or any value that needs to be generated based on the request context.
 
-### Basic Usage
+### FGH Expression Syntax
 
-Cache tags are defined as a string expression on each route rule, with multiple values separated by commas:
-
-```js
-import { createInterceptor } from 'make-cacheable-interceptor'
-
-const interceptor = createInterceptor([
-  {
-    routeToMatch: 'https://api.example.com/users/:userId',
-    headers: { 'cache-control': 'private, max-age=3600' },
-    cacheTags: "'user-' + .params.userId, 'type-user'"
-  },
-  {
-    routeToMatch: 'http://api.example.com/products',
-    headers: { 'cache-control': 'public, max-age=3600' },
-    cacheTags: ".querystring.category, 'products'"
-  }
-])
-```
-
-### Expression Syntax
-
-Cache tag expressions use the FGH query language, which is similar to jq syntax. Expressions are evaluated against a context object containing request information.
+FGH expressions use a simple query language that's similar to jq syntax. These expressions are evaluated against a context object containing request information.
 
 #### Available Context Properties
 
 - `.path` - The full path of the request
 - `.params` - An object containing route parameters (e.g., `:userId` becomes `.params.userId`)
 - `.querystring` - An object containing query string parameters
+- `.headers` - An object containing request headers (lowercase keys)
 
 #### Expression Types
 
@@ -268,7 +282,7 @@ Cache tag expressions use the FGH query language, which is similar to jq syntax.
 String literals must be wrapped in single quotes:
 
 ```js
-cacheTags: "'static-tag', 'constant-value'"
+'static-tag', 'constant-value'
 ```
 
 ##### Route Parameters
@@ -276,27 +290,37 @@ cacheTags: "'static-tag', 'constant-value'"
 Access route parameters using the `.params` object:
 
 ```js
-cacheTags: "'user-' + .params.userId"
+.params.userId
 ```
 
-For a route like `/users/123`, this would generate a cache tag of `user-123`.
+For a route like `/users/123`, this would evaluate to `123`.
 
 ##### Query String Parameters
 
 Access query string parameters using the `.querystring` object:
 
 ```js
-cacheTags: ".querystring.category"
+.querystring.category
 ```
 
-For a request to `/products?category=electronics`, this would generate a cache tag of `electronics`.
+For a request to `/products?category=electronics`, this would evaluate to `electronics`.
+
+##### Request Headers
+
+Access request headers using the `.headers` object:
+
+```js
+.headers["x-tenant-id"]
+```
+
+For a request with `X-Tenant-ID: tenant-123` header, this would evaluate to `tenant-123`.
 
 ##### Combining Values
 
 You can concatenate values using the `+` operator:
 
 ```js
-cacheTags: "'product-' + .params.productId, 'category-' + .querystring.category"
+'product-' + .params.productId
 ```
 
 ##### Default Values with Null Coalescing
@@ -304,75 +328,114 @@ cacheTags: "'product-' + .params.productId, 'category-' + .querystring.category"
 Use the `//` operator to provide default values when a parameter is missing:
 
 ```js
-cacheTags: ".querystring.variant // 'default'"
+.querystring.variant // 'default'
 ```
 
 This will use the `variant` query parameter if present, or fall back to `'default'` if not.
 
+### Using FGH for Header Values
+
+To use an FGH expression for a header value, specify an object with an `fgh` property:
+
+```js
+{
+  routeToMatch: 'http://api.example.com/users/:userId',
+  headers: {
+    'cache-control': 'private, max-age=3600',
+    'x-user-id': { fgh: '.params.userId' },
+    'x-organization': { fgh: '.headers["x-org-id"] // "default-org"' }
+  }
+}
+```
+
 ### Examples
 
-#### Static Tags
+#### Cache Tags with Static Values
 
 ```js
 {
   routeToMatch: 'https://cdn.example.com/static/*',
-  headers: { 'cache-control': 'public, max-age=86400' },
-  cacheTags: "'static', 'cdn'"
+  headers: { 
+    'cache-control': 'public, max-age=86400',
+    'x-cache-tags': { fgh: "'static', 'cdn'" }
+  }
 }
 ```
 
-This will add `x-cache-tags: static,cdn` to all matching responses (or your custom header name if specified).
+This will add `x-cache-tags: static,cdn` to all matching responses.
 
-#### User-specific Resources
+#### User-specific Headers
 
 ```js
 {
   routeToMatch: 'https://api.example.com/users/:userId',
-  headers: { 'cache-control': 'private, max-age=3600' },
-  cacheTags: "'user-' + .params.userId, 'type-user'"
+  headers: { 
+    'cache-control': 'private, max-age=3600',
+    'x-user-id': { fgh: '.params.userId' },
+    'x-cache-tags': { fgh: "'user-' + .params.userId, 'type-user'" }
+  }
 }
 ```
 
-For `/users/123`, this adds `x-cache-tags: user-123,type-user` (or your custom header name if specified).
+For `/users/123`, this adds:
+- `x-user-id: 123`
+- `x-cache-tags: user-123,type-user`
 
-#### Product Categories
+#### Product Category Headers
 
 ```js
 {
   routeToMatch: 'http://api.example.com/products',
-  headers: { 'cache-control': 'public, max-age=3600' },
-  cacheTags: ".querystring.category, 'products'"
+  headers: { 
+    'cache-control': 'public, max-age=3600',
+    'x-category': { fgh: '.querystring.category // "all"' },
+    'x-cache-tags': { fgh: ".querystring.category, 'products'" }
+  }
 }
 ```
 
-For `/products?category=electronics`, this adds `x-cache-tags: electronics,products` (or your custom header name if specified).
+For `/products?category=electronics`, this adds:
+- `x-category: electronics`
+- `x-cache-tags: electronics,products`
 
-#### Complex API Paths
+#### Complex API Paths with Multiple Dynamic Values
 
 ```js
 {
   routeToMatch: 'https://api.example.com/:version/categories/:categoryId/products/:productId',
-  headers: { 'cache-control': 'public, max-age=3600' },
-  cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
+  headers: { 
+    'cache-control': 'public, max-age=3600',
+    'x-api-version': { fgh: '.params.version' },
+    'x-category': { fgh: '.params.categoryId' },
+    'x-product': { fgh: '.params.productId' },
+    'x-variant': { fgh: '.querystring.variant // "default"' },
+    'x-cache-tags': { fgh: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'" }
+  }
 }
 ```
 
 For `/api/v1/categories/electronics/products/laptop-123?variant=premium`, this adds:
-`x-cache-tags: api-version-v1,category-electronics,product-laptop-123,premium` (or your custom header name if specified)
+- `x-api-version: v1`
+- `x-category: electronics`
+- `x-product: laptop-123`
+- `x-variant: premium`
+- `x-cache-tags: api-version-v1,category-electronics,product-laptop-123,premium`
 
 ### Error Handling
 
 #### Compilation Errors
 
-Invalid expressions will cause an error when creating the interceptor:
+Invalid FGH expressions will cause an error when creating the interceptor:
 
 ```js
 // This will throw an error
 createInterceptor([
   {
     routeToMatch: 'https://api.example.com/invalid-test',
-    headers: { 'cache-control': 'public, max-age=3600' },
-    cacheTags: 'invalid[expression' // Syntax error
+    headers: { 
+      'cache-control': 'public, max-age=3600',
+      'x-invalid': { fgh: 'invalid[expression' } // Syntax error
+    }
   }
 ])
 ```
@@ -381,8 +444,8 @@ createInterceptor([
 
 If an expression fails at runtime (e.g., trying to access a property of undefined), it will:
 1. Log an error to the console
-2. Skip the failed expression
-3. Continue with other valid expressions
+2. Skip the failed header
+3. Continue with other valid headers
 
 ### Custom Cache Tag Header
 
@@ -393,41 +456,37 @@ const interceptor = createInterceptor(
   [
     {
       routeToMatch: 'https://api.example.com/products/:id',
-      headers: { 'cache-control': 'public, max-age=3600' },
-      cacheTags: "'product-' + .params.id, 'category-all'"
+      headers: { 
+        'cache-control': 'public, max-age=3600',
+        'x-cache-tags': { fgh: "'product-' + .params.id, 'category-all'" }
+      }
     }
   ],
   {
-    cacheTagsHeader: 'x-purge-tags' // Use custom header name instead of 'x-cache-tags'
+    cacheTagsHeader: 'x-purge-tags' // Use this instead of 'x-cache-tags'
   }
 )
 ```
 
-With this configuration, for a request to `/products/123`, the response will include:
-```
-x-purge-tags: product-123,category-all
-```
+In this case, the expression would automatically target the custom header name.
 
-This is particularly useful when integrating with different CDN providers or cache systems that use specific header names for cache invalidation.
+## Best Practices
 
-### Best Practices
-
-1. **Start simple**: Begin with static tags for broad categories
-2. **Use meaningful prefixes**: Prefix tags with their type (e.g., `user-`, `product-`)
-3. **Avoid deeply nested expressions**: Keep expressions simple for better performance
-4. **Provide default values**: Use the null coalescing operator for optional parameters
-5. **Test your expressions**: Verify that your tag expressions generate the expected values
-6. **Cache tag naming conventions**: Use consistent naming patterns across your application
-7. **Don't leak sensitive information**: Avoid including sensitive data in cache tags
+1. **Use static values when possible**: Only use FGH expressions when you need dynamic values
+2. **Keep expressions simple**: Avoid deeply nested expressions for better performance
+3. **Provide default values**: Use the null coalescing operator for optional parameters
+4. **Consider security**: Avoid including sensitive data in headers
+5. **Be consistent**: Use a standard naming convention for headers across your application
+6. **Prefix tags**: For cache tags, use prefixes to organize them (e.g., `user-`, `product-`)
+7. **Test your expressions**: Verify that your FGH expressions generate the expected values
 
 ## Notes
 
 - The interceptor only adds headers if they don't already exist in the response
 - Headers are only added to GET and HEAD requests
-
 - The interceptor respects the find-my-way pattern syntax
 - You must explicitly add wildcards (`*`) in your patterns when needed
-- Cache tag expressions are compiled using the FGH library
+- FGH expressions are compiled using the FGH library
 - Each route must include both the origin (host:port) and path
 - The origin is matched against the request's host header, origin URL, or hostname/port
 - You can optionally include the protocol (http:// or https://) in route definitions for clarity
