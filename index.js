@@ -96,3 +96,5 @@ export function createInterceptor (rules, options = {}) {
   // Create and return the interceptor function
   return createInterceptorFunction(router, cacheTagsHeader)
 }
+
+export default createInterceptor
