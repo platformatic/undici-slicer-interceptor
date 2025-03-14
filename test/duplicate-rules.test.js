@@ -8,11 +8,11 @@ describe('make-cacheable-interceptor - duplicate rules detection', () => {
     const rules = [
       {
         routeToMatch: 'example.com/api/data',
-        cacheControl: 'public, max-age=86400'
+        headers: { 'cache-control': 'public, max-age=86400' }
       },
       {
         routeToMatch: 'example.com/api/data',
-        cacheControl: 'private, max-age=3600'
+        headers: { 'cache-control': 'private, max-age=3600' }
       }
     ]
 
@@ -30,12 +30,12 @@ describe('make-cacheable-interceptor - duplicate rules detection', () => {
     const rules = [
       {
         routeToMatch: 'example.com/api/users',
-        cacheControl: 'public, max-age=86400',
+        headers: { 'cache-control': 'public, max-age=86400' },
         cacheTags: "'user'"
       },
       {
         routeToMatch: 'example.com/api/users',
-        cacheControl: 'private, max-age=3600',
+        headers: { 'cache-control': 'private, max-age=3600' },
         cacheTags: "'private-user'"
       }
     ]
@@ -54,11 +54,11 @@ describe('make-cacheable-interceptor - duplicate rules detection', () => {
     const rules = [
       {
         routeToMatch: 'example.com/api/data',
-        cacheControl: 'public, max-age=86400'
+        headers: { 'cache-control': 'public, max-age=86400' }
       },
       {
         routeToMatch: 'other-domain.com/api/data',
-        cacheControl: 'private, max-age=3600'
+        headers: { 'cache-control': 'private, max-age=3600' }
       }
     ]
 
@@ -71,11 +71,11 @@ describe('make-cacheable-interceptor - duplicate rules detection', () => {
     const rules = [
       {
         routeToMatch: 'example.com/api/data',
-        cacheControl: 'public, max-age=86400'
+        headers: { 'cache-control': 'public, max-age=86400' }
       },
       {
         routeToMatch: 'example.com/api/users',
-        cacheControl: 'private, max-age=3600'
+        headers: { 'cache-control': 'private, max-age=3600' }
       }
     ]
 

@@ -22,7 +22,7 @@ describe('make-cacheable-interceptor - route params', () => {
       // Create agent with our interceptor using route parameters
       const agent = new Agent()
       const interceptor = createInterceptor([
-        { routeToMatch: `${hostname}/users/:userId`, cacheControl: 'private, max-age=3600' }
+        { routeToMatch: `${hostname}/users/:userId`, headers: { 'cache-control': 'private, max-age=3600' } }
       ])
 
       const composedAgent = agent.compose(interceptor)
@@ -45,7 +45,7 @@ describe('make-cacheable-interceptor - route params', () => {
     // Test that route parameters work correctly with cache tag evaluation
     const rule = {
       routeToMatch: 'example.com/users/:userId',
-      cacheControl: 'private, max-age=3600',
+      headers: { 'cache-control': 'private, max-age=3600' },
       cacheTags: "'user-' + .params.userId"
     }
 

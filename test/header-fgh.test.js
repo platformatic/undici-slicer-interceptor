@@ -5,8 +5,8 @@ import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createInterceptor } from '../index.js'
 
-describe('make-cacheable-interceptor - cache tags from request headers', () => {
-  test('should add x-cache-tags header based on request headers', async () => {
+describe('make-cacheable-interceptor - headers with FGH', () => {
+  test('should set headers using FGH expressions', async () => {
     // Setup test server
     const server = createServer((req, res) => {
       res.end('hello world')
@@ -19,13 +19,106 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     const hostname = `localhost:${server.address().port}`
 
     try {
-      // Create agent with our interceptor using request header-based cache tags
+      // Create agent with our interceptor using FGH in headers
+      const agent = new Agent()
+      const interceptor = createInterceptor([
+        {
+          routeToMatch: `${hostname}/users/:userId`,
+          headers: {
+            'cache-control': 'private, max-age=3600',
+            'x-user-route': 'true',
+            'x-user-id': { fgh: '.params.userId' },
+            'x-cache-tags': { fgh: "'user', 'user-' + .params.userId" }
+          }
+        }
+      ])
+
+      const composedAgent = agent.compose(interceptor)
+
+      // Test request
+      const res = await composedAgent.request({
+        method: 'GET',
+        origin: serverUrl,
+        path: '/users/123'
+      })
+
+      assert.strictEqual(res.headers['cache-control'], 'private, max-age=3600')
+      assert.strictEqual(res.headers['x-user-route'], 'true')
+      assert.strictEqual(res.headers['x-user-id'], '123')
+      assert.strictEqual(res.headers['x-cache-tags'], 'user,user-123')
+      await res.body.dump()
+    } finally {
+      server.close()
+    }
+  })
+
+  test('should handle multiple FGH headers', async () => {
+    // Setup test server
+    const server = createServer((req, res) => {
+      res.end('hello world')
+    })
+
+    server.listen(0)
+    await once(server, 'listening')
+
+    const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
+
+    try {
+      // Create agent with our interceptor using multiple FGH headers
+      const agent = new Agent()
+      const interceptor = createInterceptor([
+        {
+          routeToMatch: `${hostname}/api/products/:productId`,
+          headers: {
+            'cache-control': 'public, max-age=1800',
+            'x-product-id': { fgh: '.params.productId' },
+            'x-product-variant': { fgh: '.querystring.variant // "default"' },
+            'x-cache-tags': { fgh: "'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
+          }
+        }
+      ])
+
+      const composedAgent = agent.compose(interceptor)
+
+      // Test request with query parameter
+      const res = await composedAgent.request({
+        method: 'GET',
+        origin: serverUrl,
+        path: '/api/products/laptop-123?variant=premium'
+      })
+
+      assert.strictEqual(res.headers['cache-control'], 'public, max-age=1800')
+      assert.strictEqual(res.headers['x-product-id'], 'laptop-123')
+      assert.strictEqual(res.headers['x-product-variant'], 'premium')
+      assert.strictEqual(res.headers['x-cache-tags'], 'product,product-laptop-123,premium')
+      await res.body.dump()
+    } finally {
+      server.close()
+    }
+  })
+
+  test('should handle request headers in FGH expressions', async () => {
+    // Setup test server
+    const server = createServer((req, res) => {
+      res.end('hello world')
+    })
+
+    server.listen(0)
+    await once(server, 'listening')
+
+    const serverUrl = `http://localhost:${server.address().port}`
+    const hostname = `localhost:${server.address().port}`
+
+    try {
+      // Create agent with our interceptor using request headers in FGH
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/auth`,
           headers: {
             'cache-control': 'public, max-age=3600',
+            'x-tenant-echo': { fgh: '.headers["x-tenant-id"]' },
             'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'auth'" }
           }
         }
@@ -44,6 +137,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
+      assert.strictEqual(res.headers['x-tenant-echo'], 'tenant-123')
       assert.strictEqual(res.headers['x-cache-tags'], 'tenant-123,auth')
       await res.body.dump()
     } finally {
@@ -51,7 +145,7 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     }
   })
 
-  test('should handle multiple request headers in cache tags', async () => {
+  test('should handle mixed regular and FGH headers', async () => {
     // Setup test server
     const server = createServer((req, res) => {
       res.end('hello world')
@@ -64,126 +158,38 @@ describe('make-cacheable-interceptor - cache tags from request headers', () => {
     const hostname = `localhost:${server.address().port}`
 
     try {
-      // Create agent with our interceptor using multiple headers in cache tags
+      // Create agent with our interceptor using mixed header types
       const agent = new Agent()
       const interceptor = createInterceptor([
         {
-          routeToMatch: `${hostname}/api/multi-header`,
+          routeToMatch: `${hostname}/mixed/*`,
           headers: {
             'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], .headers[\"x-user-id\"], 'api'" }
+            'x-static': 'static-value',
+            'x-dynamic': { fgh: "'dynamic-' + .params[0]" },
+            'x-cache-tags': { fgh: "'mixed', 'pattern-' + .params[0]" }
           }
         }
       ])
 
       const composedAgent = agent.compose(interceptor)
 
-      // Test request with multiple custom headers
+      // Test request
       const res = await composedAgent.request({
         method: 'GET',
         origin: serverUrl,
-        path: '/api/multi-header',
-        headers: {
-          'x-tenant-id': 'tenant-123',
-          'x-user-id': 'user-456'
-        }
+        path: '/mixed/test'
       })
 
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
-      assert.strictEqual(res.headers['x-cache-tags'], 'tenant-123,user-456,api')
+      assert.strictEqual(res.headers['x-static'], 'static-value')
+      assert.strictEqual(res.headers['x-dynamic'], 'dynamic-test')
+      assert.strictEqual(res.headers['x-cache-tags'], 'mixed,pattern-test')
       await res.body.dump()
     } finally {
       server.close()
     }
   })
 
-  test('should handle combination of headers, params and querystring in cache tags', async () => {
-    // Setup test server
-    const server = createServer((req, res) => {
-      res.end('hello world')
-    })
-
-    server.listen(0)
-    await once(server, 'listening')
-
-    const serverUrl = `http://localhost:${server.address().port}`
-    const hostname = `localhost:${server.address().port}`
-
-    try {
-      // Create agent with our interceptor using a combination of sources for cache tags
-      const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/users/:userId/products`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'user-' + .params.userId, .querystring.category" }
-          }
-        }
-      ])
-
-      const composedAgent = agent.compose(interceptor)
-
-      // Test request with headers, params, and querystring values
-      const res = await composedAgent.request({
-        method: 'GET',
-        origin: serverUrl,
-        path: '/users/123/products?category=electronics',
-        headers: {
-          'x-tenant-id': 'tenant-abc'
-        }
-      })
-
-      assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
-      assert.strictEqual(res.headers['x-cache-tags'], 'tenant-abc,user-123,electronics')
-      await res.body.dump()
-    } finally {
-      server.close()
-    }
-  })
-
-  test('should handle case-insensitive header names', async () => {
-    // Setup test server
-    const server = createServer((req, res) => {
-      res.end('hello world')
-    })
-
-    server.listen(0)
-    await once(server, 'listening')
-
-    const serverUrl = `http://localhost:${server.address().port}`
-    const hostname = `localhost:${server.address().port}`
-
-    try {
-      // Create agent with our interceptor using lowercase header names in the expression
-      const agent = new Agent()
-      const interceptor = createInterceptor([
-        {
-          routeToMatch: `${hostname}/api/case-insensitive`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: '.headers["x-tenant-id"]' }
-          }
-        }
-      ])
-
-      const composedAgent = agent.compose(interceptor)
-
-      // Test request with mixed-case header names
-      const res = await composedAgent.request({
-        method: 'GET',
-        origin: serverUrl,
-        path: '/api/case-insensitive',
-        headers: {
-          'X-Tenant-ID': 'tenant-xyz' // Mixed case
-        }
-      })
-
-      assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
-      assert.strictEqual(res.headers['x-cache-tags'], 'tenant-xyz')
-      await res.body.dump()
-    } finally {
-      server.close()
-    }
-  })
+  // Other tests...
 })

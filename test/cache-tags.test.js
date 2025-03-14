@@ -24,8 +24,10 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/static/*`,
-          cacheControl: 'public, max-age=86400',
-          cacheTags: "'static', 'cdn'"
+          headers: {
+            'cache-control': 'public, max-age=86400',
+            'x-cache-tags': { fgh: "'static', 'cdn'" }
+          }
         }
       ])
 
@@ -64,8 +66,10 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/users/:userId`,
-          cacheControl: 'private, max-age=3600',
-          cacheTags: "'user-' + .params.userId, 'type-user'"
+          headers: {
+            'cache-control': 'private, max-age=3600',
+            'x-cache-tags': { fgh: "'user-' + .params.userId, 'type-user'" }
+          }
         }
       ])
 
@@ -104,8 +108,10 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/products`,
-          cacheControl: 'public, max-age=3600',
-          cacheTags: ".querystring.category, 'products'"
+          headers: {
+            'cache-control': 'public, max-age=3600',
+            'x-cache-tags': { fgh: ".querystring.category, 'products'" }
+          }
         }
       ])
 
@@ -144,8 +150,10 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/api/:version/categories/:categoryId/products/:productId`,
-          cacheControl: 'public, max-age=3600',
-          cacheTags: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'"
+          headers: {
+            'cache-control': 'public, max-age=3600',
+            'x-cache-tags': { fgh: "'api-version-' + .params.version, 'category-' + .params.categoryId, 'product-' + .params.productId, .querystring.variant // 'default'" }
+          }
         }
       ])
 
@@ -183,19 +191,21 @@ describe('make-cacheable-interceptor - cache tags', () => {
     }
   })
 
-  test('should throw error for invalid cache tag expressions', () => {
+  test('should throw error for invalid FGH expression in cache tag header', () => {
     assert.throws(() => {
       createInterceptor([
         {
           routeToMatch: 'example.com/invalid-test',
-          cacheControl: 'public, max-age=3600',
-          cacheTags: 'invalid[expression' // This should cause an error during compilation
+          headers: {
+            'cache-control': 'public, max-age=3600',
+            'x-cache-tags': { fgh: 'invalid[expression' } // This should cause an error during compilation
+          }
         }
       ])
-    }, /Error compiling cache tag expression: invalid\[expression/)
+    }, /Error compiling FGH expression for header x-cache-tags: invalid\[expression/)
   })
 
-  test('should not add x-cache-tags header when no cache tags are defined', async () => {
+  test('should not add x-cache-tags header when not defined', async () => {
     // Setup test server
     const server = createServer((req, res) => {
       res.end('hello world')
@@ -213,8 +223,8 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/no-tags`,
-          cacheControl: 'public, max-age=3600'
-          // No cacheTags property
+          headers: { 'cache-control': 'public, max-age=3600' }
+          // No x-cache-tags header
         }
       ])
 
@@ -254,8 +264,10 @@ describe('make-cacheable-interceptor - cache tags', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `${hostname}/respect-existing`,
-          cacheControl: 'public, max-age=3600',
-          cacheTags: "'should-not-appear'"
+          headers: {
+            'cache-control': 'public, max-age=3600',
+            'x-cache-tags': { fgh: "'should-not-appear'" }
+          }
         }
       ])
 

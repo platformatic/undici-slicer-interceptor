@@ -47,11 +47,11 @@ describe('make-cacheable-interceptor - protocol in route', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `http://localhost:${port}/api/*`,
-          cacheControl: 'public, max-age=86400'
+          headers: { 'cache-control': 'public, max-age=86400' }
         },
         {
           routeToMatch: 'other.example.com/api/*',
-          cacheControl: 'no-store'
+          headers: { 'cache-control': 'no-store' }
         }
       ])
 
@@ -114,11 +114,11 @@ describe('make-cacheable-interceptor - protocol in route', () => {
       const interceptor = createInterceptor([
         {
           routeToMatch: `http://localhost:${port}/api/*`,
-          cacheControl: 'public, max-age=86400'
+          headers: { 'cache-control': 'public, max-age=86400' }
         },
         {
           routeToMatch: `localhost:${port}/static/*`,
-          cacheControl: 'public, max-age=3600'
+          headers: { 'cache-control': 'public, max-age=3600' }
         }
       ])
 

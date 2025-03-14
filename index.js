@@ -3,17 +3,18 @@ import { createRouter } from './lib/router.js'
 import { createInterceptorFunction } from './lib/interceptor.js'
 
 /**
- * Creates an undici interceptor that adds cache-control headers based on specified rules.
+ * Creates an undici interceptor that adds headers based on specified rules.
  * The interceptor uses a router to match the request path and applies the corresponding
- * cache-control header to the response, but only for GET and HEAD requests, and only if
- * no cache-control header already exists. It can also add cache tags headers based on
- * jq-style rules implemented via fgh.
+ * headers to the response, but only for GET and HEAD requests, and only if
+ * those headers don't already exist. It can also add cache tags headers and any other
+ * dynamic headers based on jq-style rules implemented via fgh.
  *
- * @param {Array<{routeToMatch: string, cacheControl: string, cacheTags?: string}>} rules - Array of rules for cache control
+ * @param {Array<{routeToMatch: string, headers?: Object}>} rules - Array of rules for headers
  * @param {string} rules[].routeToMatch - Origin and path pattern to match in format "hostname:port/path" or "hostname/path"
- * @param {string} rules[].cacheControl - Cache-Control header value to set for matching paths
- * @param {string} [rules[].cacheTags] - JQ-style expression via fgh to generate cache tags from params, querystring, and request headers.
- * For multiple values, use comma-separated syntax like ".params.id, 'static'" or ".,." for multiple outputs.
+ * @param {Object} [rules[].headers] - Object containing headers to set. Values can be strings for static headers
+ * (e.g., {"cache-control": "public, max-age=3600"}) or objects with an fgh property for dynamic headers based on
+ * request context (e.g., {"x-cache-tags": { fgh: "'user', 'user-' + .params.userId" }})
+ *
  * @param {Object} [options] - Options for the find-my-way router
  * @param {boolean} [options.ignoreTrailingSlash=false] - Ignore trailing slashes in routes
  * @param {boolean} [options.ignoreDuplicateSlashes=false] - Ignore duplicate slashes in routes
@@ -33,23 +34,36 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *   [
  *     {
  *       routeToMatch: 'localhost:3042/static/*',
- *       cacheControl: 'public, max-age=86400',
- *       cacheTags: "'static'"
+ *       headers: {
+ *         'cache-control': 'public, max-age=86400',
+ *         'x-custom-header': 'static-content',
+ *         'x-cache-tags': { fgh: "'static', 'cdn'" }
+ *       }
  *     },
  *     {
  *       routeToMatch: 'localhost:3042/users/:id',
- *       cacheControl: 'public, max-age=3600',
- *       cacheTags: "'user-' + .params.id"
+ *       headers: {
+ *         'cache-control': 'public, max-age=3600',
+ *         'x-user-id': { fgh: ".params.id" },
+ *         'x-cache-tags': { fgh: "'user-' + .params.id, 'type-user'" }
+ *       }
  *     },
  *     {
  *       routeToMatch: 'localhost:3042/api/products',
- *       cacheControl: 'public, max-age=3600',
- *       cacheTags: ".querystring.category"
+ *       headers: {
+ *         'cache-control': 'public, max-age=3600',
+ *         'x-api-version': '1.0',
+ *         'x-cache-tags': { fgh: ".querystring.category, 'products'" }
+ *       }
  *     },
  *     {
  *       routeToMatch: 'api.example.com/api/auth',
- *       cacheControl: 'public, max-age=600',
- *       cacheTags: ".headers[\"x-tenant-id\"], 'auth'"
+ *       headers: {
+ *         'cache-control': 'public, max-age=600',
+ *         'x-security-level': 'high',
+ *         'x-cache-tags': { fgh: ".headers[\"x-tenant-id\"], 'auth'" },
+ *         'x-tenant': { fgh: ".headers[\"x-tenant-id\"]" }
+ *       }
  *     }
  *   ],
  *   {
@@ -59,9 +73,9 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *   }
  * )
  *
- * // This will add cache-control headers to GET and HEAD requests
- * // that don't already have a cache-control header, and cache tags
- * // headers based on the provided jq-style expressions
+ * // This will add headers to GET and HEAD requests that don't already
+ * // have those headers. Dynamic headers can use jq-style expressions
+ * // to generate values based on request context.
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)
  * ```

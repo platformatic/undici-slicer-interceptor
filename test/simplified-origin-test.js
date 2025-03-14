@@ -38,11 +38,11 @@ describe('make-cacheable-interceptor - simplified origin tests', () => {
     validateRules([
       {
         routeToMatch: 'example.com/api/*',
-        cacheControl: 'public, max-age=3600'
+        headers: { 'cache-control': 'public, max-age=3600' }
       },
       {
         routeToMatch: 'example.com:3000/static/*',
-        cacheControl: 'public, max-age=86400'
+        headers: { 'cache-control': 'public, max-age=86400' }
       }
     ])
 
@@ -51,7 +51,7 @@ describe('make-cacheable-interceptor - simplified origin tests', () => {
       validateRules([
         {
           routeToMatch: '/api/*',
-          cacheControl: 'public, max-age=3600'
+          headers: { 'cache-control': 'public, max-age=3600' }
         }
       ])
     }, /Origin must be specified/)

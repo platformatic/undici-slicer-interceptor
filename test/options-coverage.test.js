@@ -23,7 +23,7 @@ describe('make-cacheable-interceptor - options coverage', () => {
       const agent = new Agent()
       const interceptor = createInterceptor(
         [
-          { routeToMatch: `${hostname}/`, cacheControl: 'public, max-age=86400' }
+          { routeToMatch: `${hostname}/`, headers: { 'cache-control': 'public, max-age=86400' } }
         ],
         {
           ignoreTrailingSlash: true,
