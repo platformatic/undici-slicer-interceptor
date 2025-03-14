@@ -173,8 +173,7 @@ describe('make-cacheable-interceptor - router options', () => {
         ignoreDuplicateSlashes: true,
         maxParamLength: 200,
         caseSensitive: false,
-        useSemicolonDelimiter: true,
-        cacheTagsHeader: 'x-custom-cache-tags',
+        useSemicolonDelimiter: true
       })
 
       const composedAgent = agent.compose(interceptor)

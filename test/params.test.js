@@ -47,8 +47,7 @@ describe('make-cacheable-interceptor - route params', () => {
     // Test that route parameters work correctly with cache tag evaluation
     const rule = {
       routeToMatch: 'example.com/users/:userId',
-      headers: { 'cache-control': 'private, max-age=3600' },
-      cacheTags: "'user-' + .params.userId"
+      headers: { 'cache-control': 'private, max-age=3600' }
     }
 
     const interceptor = createInterceptor({ rules: [rule] })

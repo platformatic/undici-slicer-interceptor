@@ -30,8 +30,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
               'x-custom-cache-tags': { fgh: "'product-' + .params.id, 'category-all'" },
             },
           },
-        ],
-        cacheTagsHeader: 'x-custom-cache-tags',
+        ]
       })
 
       const composedAgent = agent.compose(interceptor)
@@ -77,8 +76,7 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
               'x-custom-cache-tags': { fgh: "'should-not-appear'" },
             },
           },
-        ],
-        cacheTagsHeader: 'x-custom-cache-tags',
+        ]
       })
 
       const composedAgent = agent.compose(interceptor)

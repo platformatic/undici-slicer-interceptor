@@ -21,7 +21,6 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  * @param {number} [options.maxParamLength=100] - Maximum length of a parameter
  * @param {boolean} [options.caseSensitive=true] - Use case sensitive routing
  * @param {boolean} [options.useSemicolonDelimiter=false] - Use semicolon instead of ampersand as query param delimiter
- * @param {string} [options.cacheTagsHeader='x-cache-tags'] - The name of the header to use for cache tags
  * @returns {Function} - An undici interceptor function that can be composed with a dispatcher
  *
  * @example
@@ -68,8 +67,7 @@ import { createInterceptorFunction } from './lib/interceptor.js'
  *       }
  *     ],
  *     ignoreTrailingSlash: true,
- *     caseSensitive: false,
- *     cacheTagsHeader: 'x-custom-cache-tags'
+ *     caseSensitive: false
  *   }
  * )
  *
@@ -83,7 +81,6 @@ import { createInterceptorFunction } from './lib/interceptor.js'
 export function createInterceptor (options = {}) {
   // Default option for cache tags header name
   const { rules, ...routeOptions } = options
-  const cacheTagsHeader = routeOptions.cacheTagsHeader || 'x-cache-tags'
 
   // Validate rules
   validateRules(rules)
@@ -95,7 +92,7 @@ export function createInterceptor (options = {}) {
   const router = createRouter(sortedRules, routeOptions)
 
   // Create and return the interceptor function
-  return createInterceptorFunction(router, cacheTagsHeader)
+  return createInterceptorFunction(router)
 }
 
 export default createInterceptor

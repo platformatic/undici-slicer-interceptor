@@ -160,7 +160,6 @@ The interceptor accepts the following find-my-way options as a second parameter:
 | `maxParamLength` | number | `100` | The maximum length of a parameter |
 | `caseSensitive` | boolean | `true` | When set to `true`, `/api/users` and `/api/Users` will be treated as different routes |
 | `useSemicolonDelimiter` | boolean | `false` | When set to `true`, use semicolon instead of ampersand as query parameter delimiter |
-| `cacheTagsHeader` | string | `'x-cache-tags'` | The name of the header to use for cache tags |
 
 Example with options:
 
@@ -179,8 +178,7 @@ const interceptor = createInterceptor(
     ],
     ignoreTrailingSlash: true,
     caseSensitive: false,
-    ignoreDuplicateSlashes: true,
-    cacheTagsHeader: 'x-custom-cache-tags' // Use a custom header name for cache tags
+    ignoreDuplicateSlashes: true
   }
 )
 ```
@@ -446,27 +444,6 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 1. Log an error to the console
 2. Skip the failed header
 3. Continue with other valid headers
-
-### Custom Cache Tag Header
-
-You can customize the name of the header used for cache tags by setting the `cacheTagsHeader` option:
-
-```js
-const interceptor = createInterceptor(
-  {
-    rules: [
-      {
-        routeToMatch: 'https://api.example.com/products/:id',
-        headers: { 
-          'cache-control': 'public, max-age=3600',
-          'x-cache-tags': { fgh: "'product-' + .params.id, 'category-all'" }
-        }
-      }
-    ],
-    cacheTagsHeader: 'x-purge-tags' // Use this instead of 'x-cache-tags'
-  }
-)
-```
 
 In this case, the expression would automatically target the custom header name.
 
