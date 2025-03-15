@@ -47,7 +47,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
       assert.strictEqual(res.headers['x-product-id'], '123')
       assert.strictEqual(res.headers['x-product-real-id'], 'product-123')
       assert.strictEqual(res.headers['x-cache-tags'], 'product,product-product-123')
-      
+
       // Read the body to ensure everything completes
       await res.body.text()
     } finally {
@@ -97,7 +97,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=1800')
       assert.strictEqual(res.headers['x-product-count'], '2')
       assert.strictEqual(res.headers['x-cache-tags'], 'products,product-123,product-456')
-      
+
       // Read the body to ensure everything completes
       await res.body.text()
     } finally {
@@ -146,7 +146,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
       assert.strictEqual(res.headers['x-product-id'], '123')
       // Response-based header should not be set
       assert.strictEqual(res.headers['x-cache-tags'], undefined)
-      
+
       // Read the body to ensure everything completes
       await res.body.text()
     } finally {
@@ -260,7 +260,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
             'x-product-id': { fgh: '.response.body.productId' }, // Response-based
             'x-category': { fgh: '.response.body.categoryId' }, // Response-based
             'x-variant-count': { fgh: '2' }, // Response-based
-            'x-cache-tags': { 
+            'x-cache-tags': {
               fgh: "'product', 'product-' + .params.id, 'category-' + .response.body.categoryId, .response.body.variants[].id"
             }
           }
@@ -282,7 +282,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
       assert.strictEqual(res.headers['x-category'], 'cat-123')
       assert.strictEqual(res.headers['x-variant-count'], '2')
       assert.strictEqual(res.headers['x-cache-tags'], 'product,product-555,category-cat-123,var-1,var-2')
-      
+
       await res.body.text()
     } finally {
       server.close()
@@ -332,7 +332,7 @@ describe('make-cacheable-interceptor - response body based headers', () => {
       assert.strictEqual(res.headers['x-product-id'], undefined)
       // Mixed header should still have the request-based part
       assert.strictEqual(res.headers['x-cache-tags'], 'product,product-123')
-      
+
       await res.body.text()
     } finally {
       server.close()

@@ -38,8 +38,8 @@ describe('make-cacheable-interceptor - response headers access', () => {
             'x-content-type': { fgh: '.response.headers["content-type"]' }, // Response header-based
             'x-test-echo': { fgh: '.response.headers["x-test-header"]' }, // Response header-based
             'x-server-echo': { fgh: '.response.headers["x-server-id"]' }, // Response header-based
-            'x-cache-tags': { 
-              fgh: "'product', 'product-' + .params.productId, 'server-' + .response.headers[\"x-server-id\"]" 
+            'x-cache-tags': {
+              fgh: "'product', 'product-' + .params.productId, 'server-' + .response.headers[\"x-server-id\"]"
             } // Mixed with response headers
           }
         }]
@@ -61,7 +61,7 @@ describe('make-cacheable-interceptor - response headers access', () => {
       assert.strictEqual(res.headers['x-test-echo'], 'test-value')
       assert.strictEqual(res.headers['x-server-echo'], 'server-123')
       assert.strictEqual(res.headers['x-cache-tags'], 'product,product-123,server-server-123')
-      
+
       // Read the body to complete the request
       await res.body.text()
     } finally {
@@ -109,7 +109,7 @@ describe('make-cacheable-interceptor - response headers access', () => {
       // Headers should be accessible with lowercase keys
       assert.strictEqual(res.headers['x-content-lowercase'], 'application/json')
       assert.strictEqual(res.headers['x-custom-lowercase'], 'custom-value')
-      
+
       // Read the body to complete the request
       await res.body.text()
     } finally {
