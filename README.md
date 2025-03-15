@@ -386,6 +386,16 @@ For array responses, you can use array iteration:
 
 This extracts all `id` values from an array response.
 
+##### Response Headers
+
+Access response headers using the `.response.headers` object:
+
+```js
+.response.headers["content-type"]
+```
+
+This extracts the content-type header from the response. Header names should always be lowercase for consistent access.
+
 ##### Combining Values
 
 You can concatenate values using the `+` operator:
@@ -539,6 +549,7 @@ This happens automatically - you simply use `.response.body` in your FGH express
 
 - `.response.body` - The parsed JSON body of the response
 - `.response.statusCode` - The HTTP status code of the response
+- `.response.headers` - An object containing the response headers (lowercase keys)
 
 ### Example
 
@@ -549,8 +560,9 @@ const interceptor = createInterceptor({
     headers: {
       'cache-control': 'public, max-age=3600',
       'x-product-id': { fgh: '.params.productId' }, // Request-based
-      'x-product-real-id': { fgh: '.response.body.id' }, // Response-based
-      'x-product-name': { fgh: '.response.body.name' }, // Response-based
+      'x-product-real-id': { fgh: '.response.body.id' }, // Response body-based
+      'x-original-server': { fgh: '.response.headers["server"]' }, // Response header-based
+      'x-content-type': { fgh: '.response.headers["content-type"]' }, // Response header-based
       'x-cache-tags': { 
         fgh: "'product', 'product-' + .params.productId, 'category-' + .response.body.category" 
       } // Mixed request/response based
@@ -571,7 +583,8 @@ For a request to `/products/123` that returns:
 The interceptor will add these headers:
 - `x-product-id: 123` (from the URL parameter)
 - `x-product-real-id: product-abc` (from the response body)
-- `x-product-name: Super Widget` (from the response body)
+- `x-original-server: nginx` (from the response headers)
+- `x-content-type: application/json` (from the response headers)
 - `x-cache-tags: product,product-123,category-widgets` (mixed sources)
 
 ### Working with Array Responses
