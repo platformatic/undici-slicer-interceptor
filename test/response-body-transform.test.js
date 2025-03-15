@@ -4,7 +4,6 @@ import { Agent } from 'undici'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createInterceptor } from '../index.js'
-import pino from 'pino'
 
 describe('make-cacheable-interceptor - response body transformation', () => {
   test('should transform response body using FGH expression', async () => {
@@ -31,8 +30,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'x-product-id': { fgh: '.params.productId' }
           },
           // Add a cached property and timestamp to the response
-          responseBodyTransform: { 
-            fgh: '. + { cached: true, modified: true }' 
+          responseBodyTransform: {
+            fgh: '. + { cached: true, modified: true }'
           }
         }]
       })
@@ -88,8 +87,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'cache-control': 'public, max-age=1800'
           },
           // Filter products with price > 15
-          responseBodyTransform: { 
-            fgh: 'map(select(.price > 15))' 
+          responseBodyTransform: {
+            fgh: 'map(select(.price > 15))'
           }
         }]
       })
@@ -142,8 +141,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'cache-control': 'public, max-age=1800'
           },
           // Add hardcoded values for simplicity
-          responseBodyTransform: { 
-            fgh: '. + { total: 40, itemCount: 2 }' 
+          responseBodyTransform: {
+            fgh: '. + { total: 40, itemCount: 2 }'
           }
         }]
       })
@@ -190,8 +189,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'cache-control': 'public, max-age=1800'
           },
           // This transformation will fail because missing_property doesn't exist
-          responseBodyTransform: { 
-            fgh: '.missing_property.even_more_missing' 
+          responseBodyTransform: {
+            fgh: '.missing_property.even_more_missing'
           }
         }]
       })
@@ -204,7 +203,6 @@ describe('make-cacheable-interceptor - response body transformation', () => {
         origin: serverUrl,
         path: '/api/products/123'
       })
-
 
       // Should get the original response despite the transform error
       const body = await res.body.json()
@@ -237,8 +235,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
           headers: {
             'x-processed': 'true'
           },
-          responseBodyTransform: { 
-            fgh: '. + { modified: true }' 
+          responseBodyTransform: {
+            fgh: '. + { modified: true }'
           }
         }]
       })
@@ -254,7 +252,7 @@ describe('make-cacheable-interceptor - response body transformation', () => {
 
       // Headers should be applied
       assert.strictEqual(res.headers['x-processed'], 'true')
-      
+
       // But body should remain unchanged
       const body = await res.body.text()
       assert.strictEqual(body, 'This is plain text')
@@ -285,8 +283,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
         rules: [{
           routeToMatch: `${hostname}/api/content-length-test`,
           headers: {},
-          responseBodyTransform: { 
-            fgh: '. + { extraData: "this will increase the content length" }' 
+          responseBodyTransform: {
+            fgh: '. + { extraData: "this will increase the content length" }'
           }
         }]
       })
@@ -303,12 +301,12 @@ describe('make-cacheable-interceptor - response body transformation', () => {
       // Get the transformed body
       const body = await res.body.text()
       const parsedBody = JSON.parse(body)
-      
+
       // Verify transformation was applied
       assert.strictEqual(parsedBody.id, 'test')
       assert.strictEqual(parsedBody.value, 123)
       assert.strictEqual(parsedBody.extraData, 'this will increase the content length')
-      
+
       // Check that content-length header exists, exact value may vary based on whitespace
       const contentLength = res.headers['content-length']
       assert.ok(contentLength, 'Content-Length header should exist')
@@ -322,9 +320,9 @@ describe('make-cacheable-interceptor - response body transformation', () => {
     // Setup test server
     const server = createServer((req, res) => {
       res.setHeader('Content-Type', 'application/json')
-      res.end(JSON.stringify({ 
-        id: 'product-xyz', 
-        name: 'Combined Test', 
+      res.end(JSON.stringify({
+        id: 'product-xyz',
+        name: 'Combined Test',
         category: 'test-category'
       }))
     })
@@ -348,8 +346,8 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'x-product-category': { fgh: '.response.body.category' }
           },
           // Test with transformation that accesses route params directly
-          responseBodyTransform: { 
-            fgh: '. + { route_id: .params.productId, processed: true }' 
+          responseBodyTransform: {
+            fgh: '. + { route_id: .params.productId, processed: true }'
           }
         }]
       })
@@ -367,7 +365,7 @@ describe('make-cacheable-interceptor - response body transformation', () => {
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
       assert.strictEqual(res.headers['x-product-id'], 'test123')
       assert.strictEqual(res.headers['x-product-category'], 'test-category')
-      
+
       // Check transformed body
       const body = await res.body.json()
       assert.strictEqual(body.id, 'product-xyz')
@@ -403,7 +401,7 @@ describe('make-cacheable-interceptor - response body transformation', () => {
             'cache-control': 'public, max-age=3600'
           },
           // Transform that uses one querystring parameter
-          responseBodyTransform: { 
+          responseBodyTransform: {
             fgh: '. + { "query_filter": .querystring.filter }'
           }
         }]

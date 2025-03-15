@@ -97,17 +97,17 @@ import abstractLogging from 'abstract-logging'
  * The `responseBodyTransform` property allows you to modify the response body using an FGH expression.
  * It only works with JSON responses and requires the response body to be buffered in memory before processing.
  * The transformation is applied before the response is sent to the client.
- * 
+ *
  * Example response body transformations:
- * 
+ *
  * ```js
  * // Add properties to response
  * responseBodyTransform: { fgh: '. + { cached: true, timestamp: .response.headers["date"] }' }
- * 
+ *
  * // Filter an array response
  * responseBodyTransform: { fgh: 'map(select(.price > 100))' }
- * 
- * // Add computed properties 
+ *
+ * // Add computed properties
  * responseBodyTransform: { fgh: '. + { total: (.items | map(.price * .quantity) | add) }' }
  * ```
  */

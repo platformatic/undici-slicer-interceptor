@@ -111,8 +111,8 @@ describe('make-cacheable-interceptor - input validation', () => {
     assert.doesNotThrow(() => {
       createInterceptor({
         rules: [
-          { 
-            routeToMatch: 'example.com/api/*', 
+          {
+            routeToMatch: 'example.com/api/*',
             responseBodyTransform: { fgh: '. + { cached: true }' }
           }
         ]
@@ -123,8 +123,8 @@ describe('make-cacheable-interceptor - input validation', () => {
     assert.doesNotThrow(() => {
       createInterceptor({
         rules: [
-          { 
-            routeToMatch: 'example.com/api/*', 
+          {
+            routeToMatch: 'example.com/api/*',
             headers: { 'cache-control': 'no-store' },
             responseBodyTransform: { fgh: '. + { cached: true }' }
           }
