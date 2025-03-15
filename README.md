@@ -190,6 +190,13 @@ responseBodyTransform: {
 }
 ```
 
+Example from the codebase:
+
+```js
+// Transform the response body
+responseBodyTransform: { fgh: '. + { cached: true, timestamp: .response.headers["date"] }' }
+```
+
 2. **Filter Array Responses**: Filter array items based on criteria
 
 ```js
