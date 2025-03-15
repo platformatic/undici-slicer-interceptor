@@ -142,7 +142,7 @@ describe('Logging Tests', () => {
 
     // Check for request processing log
     const processingMessage = logRecords.find(msg =>
-      msg.msg && msg.msg.includes('Interceptor processing request')
+      msg.msg && msg.msg.includes('Request-only interceptor processing request')
     )
     assert.ok(processingMessage, 'Request processing log message not found')
 
