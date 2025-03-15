@@ -249,6 +249,49 @@ Log levels used:
 
 ## Route Matching
 
+### Logging
+
+The interceptor supports logging with any Pino-compatible logger. By default, it uses `abstract-logging` which is a no-op logger that doesn't output anything.
+
+```js
+import pino from 'pino'
+
+// Create a Pino logger
+const logger = pino({
+  level: 'debug',  // Set your desired log level
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+// Create the interceptor with the logger
+const interceptor = createInterceptor({
+  rules: [
+    // Your rules here
+  ],
+  logger: logger  // Pass your logger instance
+})
+```
+
+The interceptor logs the following events:
+
+- **Interceptor creation**: When the interceptor is created
+- **Rule validation**: During rule validation
+- **Router configuration**: When the routers are configured
+- **Route matching**: When matching routes for requests
+- **Header application**: When adding headers to responses
+- **FGH compilation**: When compiling FGH expressions
+- **FGH evaluation**: When evaluating FGH expressions
+- **Error handling**: When errors occur during processing
+
+Log levels used:
+
+- `debug`: For normal operations and informational messages
+- `error`: For errors during rule validation or FGH expression evaluation
+- `trace`: For detailed context information (when enabled)
+
+## Route Matching
+
 The interceptor uses origin-based routing, where each route pattern must include both the origin (host and optional port) and the path.
 
 ### Route Format
