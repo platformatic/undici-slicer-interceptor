@@ -56,13 +56,13 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
 
       // Read the body to ensure the interceptor has processed it
       const body = await res.body.json()
-      
+
       // Verify all headers are set
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
       assert.strictEqual(res.headers['x-product-id'], 'abc-123')
       assert.strictEqual(res.headers['x-product-response-id'], 'prod-123')
       assert.strictEqual(res.headers['x-cache-tags'], 'product,product-prod-123,variants-3')
-      
+
       // Verify the body is intact
       assert.deepStrictEqual(body, responseData)
     } finally {
@@ -114,11 +114,11 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
 
       // Read the body to ensure the interceptor has processed it
       const body = await res.body.json()
-      
+
       // Verify all headers are set
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
       assert.strictEqual(res.headers['x-cache-tags'], 'products,prod-1,prod-2,prod-3')
-      
+
       // Verify the body is intact
       assert.deepStrictEqual(body, responseData)
     } finally {
@@ -173,14 +173,14 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
 
       // Read the body to ensure the interceptor has processed it
       const body = await res.body.json()
-      
+
       // Verify all headers are set
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=3600')
       assert.strictEqual(res.headers['x-custom-id'], 'abc-special')
       assert.strictEqual(res.headers['x-custom-querystring'], 'premium')
       assert.strictEqual(res.headers['x-product-id'], 'prod-xyz')
       assert.strictEqual(res.headers['x-cache-tags'], 'custom,custom-abc-special,product-prod-xyz,category-electronics')
-      
+
       // Verify the body is intact
       assert.deepStrictEqual(body, responseData)
     } finally {
@@ -226,12 +226,12 @@ describe('make-cacheable-interceptor - headers with FGH accessing response body'
 
       // Read the body to ensure the interceptor has processed it
       const body = await res.body.text()
-      
+
       // Verify headers
       assert.strictEqual(res.headers['cache-control'], 'public, max-age=60')
       assert.strictEqual(res.headers['x-has-body'], 'false')
       assert.strictEqual(res.headers['x-cache-tags'], 'empty')
-      
+
       // Verify the body is empty
       assert.strictEqual(body, '')
     } finally {

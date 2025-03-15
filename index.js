@@ -78,11 +78,11 @@ import abstractLogging from 'abstract-logging'
 export function createInterceptor (options = {}) {
   // Extract options
   const { rules = [], logger: optsLogger, ...routeOptions } = options
-  
+
   // Default logger to abstract-logging if not provided
   const logger = optsLogger || abstractLogging
   logger.debug(`Creating cacheable interceptor with ${rules.length} rules`)
-  
+
   // Validate that rules is an array
   if (!Array.isArray(rules)) {
     logger.error('Invalid rules format: not an array')
@@ -94,7 +94,7 @@ export function createInterceptor (options = {}) {
 
   // Sort rules by specificity
   const sortedRules = sortRulesBySpecificity(rules, logger)
-  
+
   // Check if any rules require response body access
   let needsResponseInterceptor = false
   for (const rule of sortedRules) {
@@ -104,7 +104,7 @@ export function createInterceptor (options = {}) {
       break
     }
   }
-  
+
   // Select appropriate interceptor based on presence of response-based headers
   if (needsResponseInterceptor) {
     logger.debug('Using unified interceptor that can handle response body access')

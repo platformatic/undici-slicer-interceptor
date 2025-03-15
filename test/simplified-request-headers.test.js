@@ -49,7 +49,7 @@ describe('make-cacheable-interceptor - simplified approach with request headers'
       })
 
       console.log('Response received, status:', response.statusCode)
-      
+
       // Read the response body
       const body = await response.body.text()
       console.log('Response body:', body)

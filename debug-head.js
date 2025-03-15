@@ -4,7 +4,7 @@ import { once } from 'node:events'
 import { createInterceptor } from './index.js'
 
 // Setup test server
-async function main() {
+async function main () {
   const server = createServer((req, res) => {
     console.log('Server received request:', req.method, req.url)
     // HEAD requests don't have a body
