@@ -113,13 +113,13 @@ describe('make-cacheable-interceptor - custom cache tags header', () => {
       const agent = new Agent()
       const interceptor = createInterceptor({
         rules: [
-        {
-          routeToMatch: `${hostname}/default-header`,
-          headers: {
-            'cache-control': 'public, max-age=3600',
-            'x-cache-tags': { fgh: "'default-tag'" }
-          }
-        }]
+          {
+            routeToMatch: `${hostname}/default-header`,
+            headers: {
+              'cache-control': 'public, max-age=3600',
+              'x-cache-tags': { fgh: "'default-tag'" }
+            }
+          }]
       })
 
       const composedAgent = agent.compose(interceptor)

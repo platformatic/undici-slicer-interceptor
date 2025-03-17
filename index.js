@@ -86,7 +86,7 @@ export function createInterceptor (options = {}) {
   // Default option for cache tags header name
   // Default logger to abstract-logging if not provided
   const { rules, logger: optsLogger, ...routeOptions } = options
-  
+
   const logger = optsLogger || abstractLogging
   logger.debug('Creating cacheable interceptor with %d rules', rules?.length || 0)
 
