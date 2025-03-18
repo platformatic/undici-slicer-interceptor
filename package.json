@@ -1,6 +1,6 @@
 {
   "name": "@platformatic/slicer-interceptor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Add headers to outgoing requests and responses",
   "main": "index.js",
   "type": "module",
