@@ -414,6 +414,28 @@ Use the `//` operator to provide default values when a parameter is missing:
 
 This will use the `variant` query parameter if present, or fall back to `'default'` if not.
 
+##### Conditional Logic with If-Then-Else
+
+You can use if-then-else expressions for conditional header values:
+
+```js
+if .params.productId then "product-" + .params.productId else empty end
+```
+
+This will generate a tag only if `productId` exists in the parameters, otherwise it returns `empty` to skip adding this tag entirely.
+
+You can also chain multiple conditions:
+
+```js
+if .params.section == "products" then 
+  "product-" + .params.itemId 
+else if .params.section == "categories" then 
+  "category-" + .params.itemId
+else 
+  "section-" + .params.section + "-" + .params.itemId 
+end
+```
+
 ### Using FGH for Header Values
 
 To use an FGH expression for a header value, specify an object with an `fgh` property:
@@ -444,6 +466,38 @@ To use an FGH expression for a header value, specify an object with an `fgh` pro
 ```
 
 This will add `x-cache-tags: static,cdn` to all matching responses.
+
+#### Conditional Cache Tags
+
+You can use if-then-else expressions to conditionally add cache tags:
+
+```js
+{
+  routeToMatch: 'https://api.example.com/products/:productId',
+  headers: {
+    'cache-control': 'public, max-age=3600',
+    'x-cache-tags': { fgh: "if .params.productId then 'product-' + .params.productId else empty end" }
+  }
+}
+```
+
+For `/products/42`, this adds `x-cache-tags: product-42`
+For a request without the parameter, no cache tag would be added.
+
+```js
+{
+  routeToMatch: 'https://api.example.com/api',
+  headers: {
+    'cache-control': 'public, max-age=3600',
+    'x-cache-tags': { 
+      fgh: "'api', if .querystring.category then 'category-' + .querystring.category else empty end" 
+    }
+  }
+}
+```
+
+For `/api?category=electronics`, this adds `x-cache-tags: api,category-electronics`
+For `/api` without query parameters, this adds `x-cache-tags: api`
 
 #### User-specific Headers
 
