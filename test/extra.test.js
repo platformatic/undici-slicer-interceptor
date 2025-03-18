@@ -67,16 +67,16 @@ describe('make-cacheable-interceptor - advanced tests', () => {
   })
 
   test('should handle invalid rules gracefully', () => {
-    // Missing cacheControl value should throw
+    // Missing headers and responseBodyTransform value should throw
     assert.throws(
       () => {
         createInterceptor({
           rules: [
-            { routeToMatch: 'example.com/api' } // Missing cacheControl
+            { routeToMatch: 'example.com/api' } // Missing both headers and responseBodyTransform
           ]
         })
       },
-      { message: 'Each rule must have a headers object' }
+      { message: 'Each rule must have either a headers object or a responseBodyTransform object (or both)' }
     )
 
     // Invalid route format without origin should throw

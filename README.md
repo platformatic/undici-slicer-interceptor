@@ -1,6 +1,6 @@
 # @platformatic/slicer-interceptor
 
-A library that creates an Undici interceptor to automatically add headers to responses based on URL routing patterns using [find-my-way](https://github.com/delvedor/find-my-way).
+A library that creates an Undici interceptor to automatically add headers to responses based on URL routing patterns using [find-my-way](https://github.com/delvedor/find-my-way). It can also transform response bodies using FGH expressions.
 
 ## Installation
 
@@ -16,6 +16,7 @@ npm install @platformatic/slicer-interceptor
 - Origin-specific routes (host:port + path patterns)
 - Supports dynamic cache tag headers for fine-grained cache invalidation strategies
 - **Supports response body-based headers** for advanced caching strategies
+- **Supports response body transformation** for modifying JSON responses
 - Configurable logging with Pino-compatible logger interface
 - Uses find-my-way for efficient URL routing and matching
 - Respects existing headers (never overrides them)
@@ -72,7 +73,9 @@ const interceptor = createInterceptor(
           'x-product-id': { fgh: '.params.productId' },
           'x-product-real-id': { fgh: '.response.body.id' }, // Response body access
           'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, 'category-' + .response.body.category" }
-        }
+        },
+        // Transform the response body by adding a cached flag
+        responseBodyTransform: { fgh: '. + { cached: true, timestamp: "cached at: " + .response.headers["date"] }' }
       }, // 30 minutes for product data with tags based on product ID and category from response
       
       { 
@@ -151,6 +154,84 @@ The interceptor never overrides existing headers in responses. If a response alr
 2. Headers set by the `headers` object
 
 This allows you to apply default headers while still allowing the server to have the final say when it specifically sets headers.
+
+## Response Body Transformation
+
+The interceptor supports transforming the response body using FGH expressions. This allows you to modify JSON responses before they are sent to the client.
+
+### Configuring a Response Body Transformation
+
+To transform a response body, add a `responseBodyTransform` property to the rule with an FGH expression:
+
+```js
+const interceptor = createInterceptor({
+  rules: [{
+    routeToMatch: 'http://api.example.com/v1/products/:productId',
+    // Set headers
+    headers: {
+      'cache-control': 'public, max-age=1800',
+      'x-product-id': { fgh: '.params.productId' }
+    },
+    // Transform the response body
+    responseBodyTransform: {
+      fgh: '. + { cached: true, timestamp: .response.headers["date"] }'
+    }
+  }]
+})
+```
+
+### Use Cases for Response Body Transformation
+
+1. **Add Metadata**: Add cached flags, timestamps, or other metadata to responses
+
+```js
+responseBodyTransform: {
+  fgh: '. + { cached: true, timestamp: .response.headers["date"] }'
+}
+```
+
+Example from the codebase:
+
+```js
+// Transform the response body
+responseBodyTransform: { fgh: '. + { cached: true, timestamp: .response.headers["date"] }' }
+```
+
+2. **Filter Array Responses**: Filter array items based on criteria
+
+```js
+responseBodyTransform: {
+  fgh: 'map(select(.price > 100))'
+}
+```
+
+3. **Add Computed Properties**: Add calculated values to responses
+
+```js
+responseBodyTransform: {
+  fgh: '. + { total: 40, itemCount: 2 }'
+}
+```
+
+4. **Combine with Route Parameters**: Use route parameters in transformations
+
+```js
+responseBodyTransform: {
+  fgh: '. + { route_id: .params.productId, processed: true }'
+}
+```
+
+### Limitations and Considerations
+
+- Only works with JSON responses (Content-Type: application/json)
+- The response body must be fully buffered in memory
+- JSON parsing and serialization add processing overhead
+- The content-length header is updated to reflect the size of the transformed body
+- The transformation is applied before the response is sent to the client
+- If the transformation fails, the original response is sent
+- Route parameters (`.params`) are not currently available in body transformation expressions
+- Only works for 200 status responses - other status codes will be passed through without transformation
+- Performance impact should be considered for large response bodies
 
 ## Router Options
 
@@ -620,6 +701,10 @@ const interceptor = createInterceptor({
       'x-cache-tags': { 
         fgh: "'product', 'product-' + .params.productId, 'category-' + .response.body.category" 
       } // Mixed request/response based
+    },
+    // Transform the response body as well
+    responseBodyTransform: {
+      fgh: '. + { cached: true, timestamp: .response.headers["date"] }'
     }
   }]
 })
@@ -641,6 +726,17 @@ The interceptor will add these headers:
 - `x-content-type: application/json` (from the response headers)
 - `x-cache-tags: product,product-123,category-widgets` (mixed sources)
 
+And transform the body to:
+```json
+{
+  "id": "product-abc",
+  "name": "Super Widget",
+  "category": "widgets",
+  "cached": true,
+  "timestamp": "Wed, 15 Mar 2025 12:00:00 GMT"
+}
+```
+
 ### Working with Array Responses
 
 You can use array iteration to generate headers from array responses:
@@ -652,6 +748,10 @@ const interceptor = createInterceptor({
     headers: {
       'cache-control': 'public, max-age=1800',
       'x-cache-tags': { fgh: "'products', .response.body[].id" }
+    },
+    // Filter products with price > 15
+    responseBodyTransform: { 
+      fgh: 'map(select(.price > 15))' 
     }
   }]
 })
@@ -660,18 +760,25 @@ const interceptor = createInterceptor({
 For a response containing:
 ```json
 [
-  { "id": "product-1", "name": "Widget A" },
-  { "id": "product-2", "name": "Widget B" },
-  { "id": "product-3", "name": "Widget C" }
+  { "id": "product-1", "name": "Widget A", "price": 10 },
+  { "id": "product-2", "name": "Widget B", "price": 20 },
+  { "id": "product-3", "name": "Widget C", "price": 30 }
 ]
 ```
 
-This will add:
-- `x-cache-tags: products,product-1,product-2,product-3`
+This will:
+- Add header: `x-cache-tags: products,product-1,product-2,product-3`
+- Transform body to only include products with price > 15:
+```json
+[
+  { "id": "product-2", "name": "Widget B", "price": 20 },
+  { "id": "product-3", "name": "Widget C", "price": 30 }
+]
+```
 
 ### Performance Considerations
 
-Response-based headers introduce some overhead:
+Response-based features introduce some overhead:
 
 1. The complete response body must be buffered in memory
 2. The JSON parsing adds processing time
@@ -679,9 +786,9 @@ Response-based headers introduce some overhead:
 
 For these reasons:
 
-- Only use response-based headers when necessary
+- Only use response-based features when necessary
 - The interceptor automatically detects which rules need response processing and only buffers responses for those routes
-- Consider applying response-based headers only to critical routes that need this functionality
+- Consider applying response-based features only to critical routes that need this functionality
 
 ### Error Handling
 
@@ -689,8 +796,9 @@ If the response cannot be parsed as JSON, or if a referenced property doesn't ex
 
 1. Request-based headers will still be applied
 2. Headers that depend on the response body will be skipped
-3. The error will be logged (if a logger is configured)
-4. The request will continue to be processed normally
+3. The response body transformation will be skipped (original body is returned)
+4. The error will be logged (if a logger is configured)
+5. The request will continue to be processed normally
 
 ### Limitations
 
@@ -708,7 +816,7 @@ If the response cannot be parsed as JSON, or if a referenced property doesn't ex
 5. **Be consistent**: Use a standard naming convention for headers across your application
 6. **Prefix tags**: For cache tags, use prefixes to organize them (e.g., `user-`, `product-`)
 7. **Test your expressions**: Verify that your FGH expressions generate the expected values
-8. **Use response-based headers judiciously**: Only use response body-based headers when the benefits outweigh the performance cost
+8. **Use response-based features judiciously**: Only use response body-based features when the benefits outweigh the performance cost
 
 ## Notes
 

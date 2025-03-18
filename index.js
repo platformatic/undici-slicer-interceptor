@@ -9,12 +9,15 @@ import abstractLogging from 'abstract-logging'
  * headers to the response, but only for GET and HEAD requests, and only if
  * those headers don't already exist. It can also add cache tags headers and any other
  * dynamic headers based on jq-style rules implemented via fgh.
+ * Additionally, it can transform response bodies using fgh expressions.
  *
- * @param {Array<{routeToMatch: string, headers?: Object}>} rules - Array of rules for headers
+ * @param {Array<{routeToMatch: string, headers?: Object, responseBodyTransform?: Object}>} rules - Array of rules for headers and body transforms
  * @param {string} rules[].routeToMatch - Origin and path pattern to match in format "hostname:port/path" or "hostname/path"
  * @param {Object} [rules[].headers] - Object containing headers to set. Values can be strings for static headers
  * (e.g., {"cache-control": "public, max-age=3600"}) or objects with an fgh property for dynamic headers based on
  * request context (e.g., {"x-cache-tags": { fgh: "'user', 'user-' + .params.userId" }})
+ * @param {Object} [rules[].responseBodyTransform] - Object with an fgh property containing an expression to transform the response body
+ * (e.g., { fgh: ". + { cached: true }" })
  *
  * @param {Object} [options] - Options for the find-my-way router
  * @param {boolean} [options.ignoreTrailingSlash=false] - Ignore trailing slashes in routes
@@ -43,6 +46,15 @@ import abstractLogging from 'abstract-logging'
  *           'x-custom-header': 'static-content',
  *           'x-cache-tags': { fgh: "'static', 'cdn'" }
  *         }
+ *       },
+ *       {
+ *         routeToMatch: 'localhost:3042/api/products/:productId',
+ *         headers: {
+ *           'cache-control': 'public, max-age=3600',
+ *           'x-product-id': { fgh: '.params.productId' }
+ *         },
+ *         // Add a cached property and timestamp to the response
+ *         responseBodyTransform: { fgh: '. + { cached: true, timestamp: .response.headers["date"] }' }
  *       },
  *       {
  *         routeToMatch: 'localhost:3042/users/:id',
@@ -80,6 +92,23 @@ import abstractLogging from 'abstract-logging'
  * // to generate values based on request context.
  * const composedAgent = agent.compose(interceptor)
  * setGlobalDispatcher(composedAgent)
+ * ```
+ *
+ * The `responseBodyTransform` property allows you to modify the response body using an FGH expression.
+ * It only works with JSON responses and requires the response body to be buffered in memory before processing.
+ * The transformation is applied before the response is sent to the client.
+ *
+ * Example response body transformations:
+ *
+ * ```js
+ * // Add properties to response
+ * responseBodyTransform: { fgh: '. + { cached: true, timestamp: .response.headers["date"] }' }
+ *
+ * // Filter an array response
+ * responseBodyTransform: { fgh: 'map(select(.price > 100))' }
+ *
+ * // Add computed properties
+ * responseBodyTransform: { fgh: '. + { total: (.items | map(.price * .quantity) | add) }' }
  * ```
  */
 export function createInterceptor (options = {}) {

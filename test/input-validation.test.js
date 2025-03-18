@@ -22,12 +22,12 @@ describe('make-cacheable-interceptor - input validation', () => {
       { message: 'Each rule must have a routeToMatch string' }
     )
 
-    // Missing headers
+    // Missing both headers and responseBodyTransform
     assert.throws(
       () => {
         createInterceptor({ rules: [{ routeToMatch: 'example.com/api' }] })
       },
-      { message: 'Each rule must have a headers object' }
+      { message: 'Each rule must have either a headers object or a responseBodyTransform object (or both)' }
     )
 
     // Invalid route format - missing origin
@@ -81,7 +81,7 @@ describe('make-cacheable-interceptor - input validation', () => {
           }]
         })
       },
-      { message: 'Each rule must have a headers object' }
+      { message: 'Each rule must have either a headers object or a responseBodyTransform object (or both)' }
     )
 
     // Empty routeToMatch
@@ -97,12 +97,37 @@ describe('make-cacheable-interceptor - input validation', () => {
       { message: 'Each rule must have a routeToMatch string' }
     )
 
-    // Valid rules should work fine
+    // Valid rules should work fine with headers
     assert.doesNotThrow(() => {
       createInterceptor({
         rules: [
           { routeToMatch: 'example.com/api/*', headers: { 'cache-control': 'no-store' } },
           { routeToMatch: 'api.example.com/path', headers: { 'cache-control': 'public, max-age=86400' } }
+        ]
+      })
+    })
+
+    // Valid rules should work fine with responseBodyTransform
+    assert.doesNotThrow(() => {
+      createInterceptor({
+        rules: [
+          {
+            routeToMatch: 'example.com/api/*',
+            responseBodyTransform: { fgh: '. + { cached: true }' }
+          }
+        ]
+      })
+    })
+
+    // Valid rules should work fine with both headers and responseBodyTransform
+    assert.doesNotThrow(() => {
+      createInterceptor({
+        rules: [
+          {
+            routeToMatch: 'example.com/api/*',
+            headers: { 'cache-control': 'no-store' },
+            responseBodyTransform: { fgh: '. + { cached: true }' }
+          }
         ]
       })
     })
