@@ -15,6 +15,7 @@ npm install @platformatic/slicer-interceptor
 - Supports dynamic header values using FGH expressions
 - Origin-specific routes (host:port + path patterns)
 - Supports dynamic cache tag headers for fine-grained cache invalidation strategies
+- **Supports response body-based headers** for advanced caching strategies
 - Configurable logging with Pino-compatible logger interface
 - Uses find-my-way for efficient URL routing and matching
 - Respects existing headers (never overrides them)
@@ -63,15 +64,16 @@ const interceptor = createInterceptor(
         }
       }, // 1 hour for user profiles with user-specific tag
       
-      // More examples of dynamic headers
+      // Dynamic header based on response body content
       { 
         routeToMatch: 'http://api.example.com/v1/products/:productId', 
         headers: {
           'cache-control': 'public, max-age=1800',
           'x-product-id': { fgh: '.params.productId' },
-          'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, .querystring.variant // 'default'" }
+          'x-product-real-id': { fgh: '.response.body.id' }, // Response body access
+          'x-cache-tags': { fgh: "'api', 'product', 'product-' + .params.productId, 'category-' + .response.body.category" }
         }
-      }, // 30 minutes for product data with tags based on product ID and variant
+      }, // 30 minutes for product data with tags based on product ID and category from response
       
       { 
         routeToMatch: 'https://api.example.com/v1/cache/*', 
@@ -304,7 +306,7 @@ When defining rules, more specific paths take precedence over more general ones.
 
 ## Dynamic Headers with FGH
 
-The interceptor supports generating dynamic header values using FGH expressions. This is particularly useful for cache tags, user-specific headers, or any value that needs to be generated based on the request context.
+The interceptor supports generating dynamic header values using FGH expressions. This is particularly useful for cache tags, user-specific headers, or any value that needs to be generated based on the request context or response body.
 
 ### FGH Expression Syntax
 
@@ -316,6 +318,7 @@ FGH expressions use a simple query language that's similar to jq syntax. These e
 - `.params` - An object containing route parameters (e.g., `:userId` becomes `.params.userId`)
 - `.querystring` - An object containing query string parameters
 - `.headers` - An object containing request headers (lowercase keys)
+- `.response` - An object containing response data (only available when using response-based headers)
 
 #### Expression Types
 
@@ -347,15 +350,51 @@ Access query string parameters using the `.querystring` object:
 
 For a request to `/products?category=electronics`, this would evaluate to `electronics`.
 
-##### Request Headers
+##### Response Body Access
 
-Access request headers using the `.headers` object:
+Access the response body using the `.response.body` property:
 
 ```js
-.headers["x-tenant-id"]
+.response.body.id
 ```
 
-For a request with `X-Tenant-ID: tenant-123` header, this would evaluate to `tenant-123`.
+This accesses the `id` property of the response body.
+
+For array responses, you can use array iteration:
+
+```js
+.response.body[].id
+```
+
+This extracts the `id` property from each item in the response array.
+
+##### Response Body Properties
+
+Access properties from the response body using the `.response.body` property:
+
+```js
+.response.body.id
+```
+
+For a response containing `{"id": "product-123", "name": "Widget"}`, this would evaluate to `product-123`.
+
+For array responses, you can use array iteration:
+
+```js
+.response.body[].id
+```
+
+This extracts all `id` values from an array response.
+
+##### Response Headers
+
+Access response headers using the `.response.headers` object:
+
+```js
+.response.headers["content-type"]
+```
+
+This extracts the content-type header from the response. Header names should always be lowercase for consistent access.
 
 ##### Combining Values
 
@@ -491,6 +530,121 @@ If an expression fails at runtime (e.g., trying to access a property of undefine
 
 In this case, the expression would automatically target the custom header name.
 
+## Response Body-Based Headers
+
+The interceptor now supports generating header values based on the response body content. This powerful feature allows for more sophisticated caching strategies where cache tags and other headers can be derived directly from the response data.
+
+### How It Works
+
+When an FGH expression contains a reference to `.response.body`, the interceptor will:
+
+1. Buffer the entire response body
+2. Parse it as JSON
+3. Make the parsed JSON available to the FGH expression
+4. Generate header values based on the response content
+
+This happens automatically - you simply use `.response.body` in your FGH expressions, and the interceptor handles the rest.
+
+### Response Context Properties
+
+- `.response.body` - The parsed JSON body of the response
+- `.response.statusCode` - The HTTP status code of the response
+- `.response.headers` - An object containing the response headers (lowercase keys)
+
+### Example
+
+```js
+const interceptor = createInterceptor({
+  rules: [{
+    routeToMatch: 'https://api.example.com/products/:productId',
+    headers: {
+      'cache-control': 'public, max-age=3600',
+      'x-product-id': { fgh: '.params.productId' }, // Request-based
+      'x-product-real-id': { fgh: '.response.body.id' }, // Response body-based
+      'x-original-server': { fgh: '.response.headers["server"]' }, // Response header-based
+      'x-content-type': { fgh: '.response.headers["content-type"]' }, // Response header-based
+      'x-cache-tags': { 
+        fgh: "'product', 'product-' + .params.productId, 'category-' + .response.body.category" 
+      } // Mixed request/response based
+    }
+  }]
+})
+```
+
+For a request to `/products/123` that returns:
+```json
+{
+  "id": "product-abc",
+  "name": "Super Widget",
+  "category": "widgets"
+}
+```
+
+The interceptor will add these headers:
+- `x-product-id: 123` (from the URL parameter)
+- `x-product-real-id: product-abc` (from the response body)
+- `x-original-server: nginx` (from the response headers)
+- `x-content-type: application/json` (from the response headers)
+- `x-cache-tags: product,product-123,category-widgets` (mixed sources)
+
+### Working with Array Responses
+
+You can use array iteration to generate headers from array responses:
+
+```js
+const interceptor = createInterceptor({
+  rules: [{
+    routeToMatch: 'https://api.example.com/products',
+    headers: {
+      'cache-control': 'public, max-age=1800',
+      'x-cache-tags': { fgh: "'products', .response.body[].id" }
+    }
+  }]
+})
+```
+
+For a response containing:
+```json
+[
+  { "id": "product-1", "name": "Widget A" },
+  { "id": "product-2", "name": "Widget B" },
+  { "id": "product-3", "name": "Widget C" }
+]
+```
+
+This will add:
+- `x-cache-tags: products,product-1,product-2,product-3`
+
+### Performance Considerations
+
+Response-based headers introduce some overhead:
+
+1. The complete response body must be buffered in memory
+2. The JSON parsing adds processing time
+3. The response will only be sent after the entire body is received and processed
+
+For these reasons:
+
+- Only use response-based headers when necessary
+- The interceptor automatically detects which rules need response processing and only buffers responses for those routes
+- Consider applying response-based headers only to critical routes that need this functionality
+
+### Error Handling
+
+If the response cannot be parsed as JSON, or if a referenced property doesn't exist:
+
+1. Request-based headers will still be applied
+2. Headers that depend on the response body will be skipped
+3. The error will be logged (if a logger is configured)
+4. The request will continue to be processed normally
+
+### Limitations
+
+- Only JSON responses are supported (the interceptor attempts to parse the response body as JSON)
+- The entire response body must be buffered in memory before processing
+- Large responses may impact performance
+- Non-200 responses will only receive request-based headers (response body is not processed)
+
 ## Best Practices
 
 1. **Use static values when possible**: Only use FGH expressions when you need dynamic values
@@ -500,6 +654,7 @@ In this case, the expression would automatically target the custom header name.
 5. **Be consistent**: Use a standard naming convention for headers across your application
 6. **Prefix tags**: For cache tags, use prefixes to organize them (e.g., `user-`, `product-`)
 7. **Test your expressions**: Verify that your FGH expressions generate the expected values
+8. **Use response-based headers judiciously**: Only use response body-based headers when the benefits outweigh the performance cost
 
 ## Notes
 
