@@ -107,6 +107,16 @@ const composedAgent = agent.compose(interceptor)
 setGlobalDispatcher(composedAgent)
 ```
 
+The input data for the `fgh` expressions is an object containing the following properties:
+
+* `headers`: an object containing all request headers as keys
+* `path`: a string containing the path of the request
+* `querystring`: an object containing the parsed querystring
+* `params`: an object containing all the path params, e.g. `/:id` will have an `id` param.
+* `response`: an object containing the following properties about the response from the upstream server:
+	- `headers`: the response headers
+	- `body`: the response body, parsed as JSON.
+
 ## Setting Headers
 
 The interceptor uses the `headers` object to define headers to be applied to responses, with support for both static and dynamic values.
