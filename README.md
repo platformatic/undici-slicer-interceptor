@@ -786,6 +786,42 @@ This will:
 ]
 ```
 
+### Updating Interceptor Options
+
+The interceptor can be updated without recreating it. This is useful for dynamically updating the rules or logger.
+
+```js
+import { createInterceptor, updateInterceptorOptions } from '@platformatic/slicer-interceptor'
+
+// Create an interceptor with header rules
+const interceptor = createInterceptor(
+  {
+    rules: [
+      { 
+        routeToMatch: 'http://example.com/static/images/*', 
+        headers: {
+          'cache-control': 'public, max-age=604800',
+          'x-cache-tags': { fgh: "'static', 'images'" }
+        }
+      }
+    ],
+  }
+)
+
+// Update the interceptor options
+updateInterceptorOptions(interceptor, {
+  rules: [
+    { 
+      routeToMatch: 'http://example.com/static/images/*', 
+      headers: {
+        'cache-control': 'public, max-age=86400',
+        'x-cache-tags': { fgh: "'static', 'images'" }
+      }
+    }
+  ]
+})
+```
+      
 ### Performance Considerations
 
 Response-based features introduce some overhead:

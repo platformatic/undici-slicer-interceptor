@@ -3,6 +3,8 @@ import { createRouter } from './lib/router.js'
 import { createInterceptorFunction } from './lib/interceptor.js'
 import abstractLogging from 'abstract-logging'
 
+const InterceptorCtxSymbol = Symbol('interceptor-ctx')
+
 /**
  * Creates an undici interceptor that adds headers based on specified rules.
  * The interceptor uses a router to match the request path and applies the corresponding
@@ -111,12 +113,21 @@ import abstractLogging from 'abstract-logging'
  * responseBodyTransform: { fgh: '. + { total: (.items | map(.price * .quantity) | add) }' }
  * ```
  */
-export function createInterceptor (options = {}) {
+export function createInterceptor (options) {
+  const ctx = createInterceptorCtx(options)
+
+  const interceptor = createInterceptorFunction(ctx)
+  interceptor[InterceptorCtxSymbol] = ctx
+
+  return interceptor
+}
+
+function createInterceptorCtx (options = {}) {
   // Default option for cache tags header name
   // Default logger to abstract-logging if not provided
   const { rules, logger: optsLogger, ...routeOptions } = options
 
-  const logger = optsLogger || abstractLogging
+  let logger = optsLogger || abstractLogging
   logger.debug('Creating cacheable interceptor with %d rules', rules?.length || 0)
 
   // Validate rules
@@ -126,10 +137,21 @@ export function createInterceptor (options = {}) {
   const sortedRules = sortRulesBySpecificity(rules, logger)
 
   // Create and configure router
-  const router = createRouter(sortedRules, routeOptions, logger)
+  let router = createRouter(sortedRules, routeOptions, logger)
 
-  // Create and return the interceptor function
-  return createInterceptorFunction(router, logger)
+  return {
+    getLogger: () => logger,
+    getRouter: () => router,
+    updateCtx: (ctx) => {
+      logger = ctx.getLogger()
+      router = ctx.getRouter()
+    }
+  }
+}
+
+export function updateInterceptorOptions (interceptor, options) {
+  const newCtx = createInterceptorCtx(options)
+  interceptor[InterceptorCtxSymbol].updateCtx(newCtx)
 }
 
 export default createInterceptor
