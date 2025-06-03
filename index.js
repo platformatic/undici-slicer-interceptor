@@ -112,6 +112,7 @@ import abstractLogging from 'abstract-logging'
  * ```
  */
 export function createInterceptor (options = {}) {
+  process._rawDebug('--------SLICER CREATE NEW INTERCEPTR--------', JSON.stringify(options, null, 2))
   // Default option for cache tags header name
   // Default logger to abstract-logging if not provided
   const { rules, logger: optsLogger, ...routeOptions } = options
@@ -129,7 +130,7 @@ export function createInterceptor (options = {}) {
   const router = createRouter(sortedRules, routeOptions, logger)
 
   // Create and return the interceptor function
-  return createInterceptorFunction(router, logger)
+  return createInterceptorFunction(router, logger, options)
 }
 
 export default createInterceptor
