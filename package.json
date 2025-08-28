@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/platformatic/slicer-interceptor#readme",
   "devDependencies": {
-    "borp": "^0.20.1",
+    "borp": "^0.20.2",
     "eslint": "^9.33.0",
     "neostandard": "^0.12.2",
     "pino": "^9.9.0",
