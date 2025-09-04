@@ -1,7 +1,7 @@
 {
-  "name": "@platformatic/slicer-interceptor",
+  "name": "undici-slicer-interceptor",
   "version": "0.3.0",
-  "description": "Add headers to outgoing requests and responses",
+  "description": "Undici interceptor that adds headers and transforms response bodies based on routing rules",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -16,7 +16,13 @@
   },
   "keywords": [
     "undici",
-    "cache"
+    "interceptor",
+    "headers",
+    "http",
+    "platformatic",
+    "middleware",
+    "request",
+    "response"
   ],
   "author": "Platformatic Inc. <oss@platformatic.dev> (https://platformatic.dev)",
   "contributors": [

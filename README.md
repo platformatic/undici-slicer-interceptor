@@ -1,11 +1,11 @@
-# @platformatic/slicer-interceptor
+# undici-slicer-interceptor
 
-A library that creates an Undici interceptor to automatically add headers to responses based on URL routing patterns using [find-my-way](https://github.com/delvedor/find-my-way). It can also transform response bodies using FGH expressions.
+A library that creates an Undici interceptor to automatically add headers to responses based on URL routing patterns using [find-my-way](https://github.com/delvedor/find-my-way). It can also transform response bodies using [FGH](https://github.com/platformatic/fgh) expressions.
 
 ## Installation
 
 ```bash
-npm install @platformatic/slicer-interceptor
+npm install undici-slicer-interceptor
 ```
 
 ## Features
@@ -29,7 +29,7 @@ npm install @platformatic/slicer-interceptor
 
 ```js
 import { Agent, setGlobalDispatcher } from 'undici'
-import { createInterceptor } from '@platformatic/slicer-interceptor'
+import { createInterceptor } from 'undici-slicer-interceptor'
 
 // Create an interceptor with header rules
 const interceptor = createInterceptor(
