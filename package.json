@@ -1,6 +1,6 @@
 {
   "name": "undici-slicer-interceptor",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Undici interceptor that adds headers and transforms response bodies based on routing rules",
   "main": "index.js",
   "type": "module",
