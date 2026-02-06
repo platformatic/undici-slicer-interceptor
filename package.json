@@ -39,7 +39,7 @@
   "homepage": "https://github.com/platformatic/undici-slicer-interceptor#readme",
   "devDependencies": {
     "borp": "^0.20.2",
-    "eslint": "^9.33.0",
+    "eslint": "^10.0.0",
     "neostandard": "^0.12.2",
     "pino": "^10.1.1",
     "pino-test": "^1.1.0",
