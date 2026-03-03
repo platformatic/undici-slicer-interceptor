@@ -40,7 +40,7 @@
   "devDependencies": {
     "borp": "^1.0.0",
     "eslint": "^9.33.0",
-    "neostandard": "^0.12.2",
+    "neostandard": "^0.13.0",
     "pino": "^10.1.1",
     "pino-test": "^1.1.0",
     "undici": "^7.14.0"
