@@ -43,7 +43,7 @@
     "neostandard": "^0.12.2",
     "pino": "^10.1.1",
     "pino-test": "^1.1.0",
-    "undici": "^7.14.0"
+    "undici": "^8.0.1"
   },
   "dependencies": {
     "abstract-logging": "^2.0.1",
