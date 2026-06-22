@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "abstract-logging": "^2.0.1",
-    "bl": "^6.1.1",
+    "bl": "^7.0.4",
     "fgh": "^2.4.0",
     "find-my-way": "^9.3.0"
   }
